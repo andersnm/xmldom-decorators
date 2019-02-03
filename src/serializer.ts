@@ -6,15 +6,15 @@ export class XMLDecoratorSerializer {
     document: Document|null = null;
 
     public serialize(data: any, type: Function): string {
-		const xmlRootSchemas = Reflect.getMetadata("xml:root", type);
-		if (!xmlRootSchemas) {
-			throw new Error("Root type must specify @xmlRoot decorator");
+        const xmlRootSchemas = Reflect.getMetadata("xml:root", type);
+        if (!xmlRootSchemas) {
+            throw new Error("Root type must specify @xmlRoot decorator");
         }
 
         // TODO: find matching schema
- 		const xmlSchema = xmlRootSchemas[0];
+        const xmlSchema = xmlRootSchemas[0];
         this.document = this.factory.createDocument(xmlSchema.namespaceUri, xmlSchema.name, null);
- 		this.serializeObject(null, type, data, xmlSchema.name, xmlSchema.namespaceUri);
+        this.serializeObject(null, type, data, xmlSchema.name, xmlSchema.namespaceUri);
 
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
@@ -26,7 +26,7 @@ export class XMLDecoratorSerializer {
         return result;
     }
 
-	private serializeObject(parentNode: Node|null, type: Function, data: any, elementName: string, namespaceUri: string) {
+    private serializeObject(parentNode: Node|null, type: Function, data: any, elementName: string, namespaceUri: string) {
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
         }
@@ -56,29 +56,29 @@ export class XMLDecoratorSerializer {
                     element.appendChild(this.document.createTextNode(value));
                 }
             }
-		}
+        }
 
-		for (let child of children) {
+        for (let child of children) {
             const value = data[child.propertyKey];
             if (value === undefined) {
                 continue;
             }
 
-			if (child.xmlType === "element") {
-				this.serializeElement(element, child, value);
-			} else if (child.xmlType === "array") {
-				this.serializeArray(element, child as ArraySchema, value);
-			}
-		}
-	}
+            if (child.xmlType === "element") {
+                this.serializeElement(element, child, value);
+            } else if (child.xmlType === "array") {
+                this.serializeArray(element, child as ArraySchema, value);
+            }
+        }
+    }
     
-	private convertValue(value: any, type: any) {
+    private convertValue(value: any, type: any) {
         if (value === undefined) {
             return;
         }
 
-		if (type === String) {
-			return value;
+        if (type === String) {
+            return value;
         } else if (type === Number) {
             return value.toString(); 
         } else if (type === Boolean) {
@@ -90,21 +90,21 @@ export class XMLDecoratorSerializer {
         }
     }
 
-	private serializeElement(parentNode: Node, schema: PropertySchema, data: any) {
+    private serializeElement(parentNode: Node, schema: PropertySchema, data: any) {
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
         }
 
         if (schema.type === Number || schema.type === Boolean || schema.type === String || schema.type === Date) {
             this.serializeValueElement(parentNode, schema, data);
-		} else if (typeof schema.type === "function") {
-			this.serializeObject(parentNode, schema.type, data, schema.name, schema.namespaceUri);
-		} else {
-			throw new Error("Canot serialize type " + schema.type);
-		}
+        } else if (typeof schema.type === "function") {
+            this.serializeObject(parentNode, schema.type, data, schema.name, schema.namespaceUri);
+        } else {
+            throw new Error("Canot serialize type " + schema.type);
+        }
     }
     
-	private serializeValueElement(parentNode: Node, schema: PropertySchema, data: any) {
+    private serializeValueElement(parentNode: Node, schema: PropertySchema, data: any) {
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
         }
@@ -114,7 +114,7 @@ export class XMLDecoratorSerializer {
         parentNode.appendChild(element);
     }
 
-	private serializeArray(parentNode: Node, schema: ArraySchema, data: any[]) {
+    private serializeArray(parentNode: Node, schema: ArraySchema, data: any[]) {
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
         }
@@ -123,16 +123,16 @@ export class XMLDecoratorSerializer {
             var nestedNode = this.document.createElementNS(schema.namespaceUri, schema.name);
             parentNode.appendChild(nestedNode);
             parentNode = nestedNode;
-		}
+        }
 
-		const itemSchema: PropertySchema = {
-			...schema,
-			type: schema.itemType,
-			name: schema.itemName,
-		};
-		
-		for (var i = 0; i < data.length; i++) {
-			this.serializeElement(parentNode, itemSchema, data[i]);
-		}
-	}
+        const itemSchema: PropertySchema = {
+            ...schema,
+            type: schema.itemType,
+            name: schema.itemName,
+        };
+        
+        for (var i = 0; i < data.length; i++) {
+            this.serializeElement(parentNode, itemSchema, data[i]);
+        }
+    }
 }

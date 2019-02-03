@@ -6,20 +6,20 @@ import { TestType } from './schema/TestType';
 
 const expedia = 
 `<AvailRateUpdateRQ xmlns="http://www.expediaconnect.com/EQC/AR/2011/06">
-	<Authentication username="Hello" password="World" />
-	<Hotel id="123" />
-	<AvailRateUpdate>
-		<DateRange from="2018-01-01Z" sun="true" />
-		<DateRange from="2018-01-01Z" sun="true" />
-		<RoomType id="1">
-			<RatePlan id="2">
-				<Rate>
-					<PerDay rate="100" />
-				</Rate
-				<Restrictions minLOS="1" />
-			</RatePlan>
-		</RoomType>
-	</AvailRateUpdate>
+    <Authentication username="Hello" password="World" />
+    <Hotel id="123" />
+    <AvailRateUpdate>
+        <DateRange from="2018-01-01Z" sun="true" />
+        <DateRange from="2018-01-01Z" sun="true" />
+        <RoomType id="1">
+            <RatePlan id="2">
+                <Rate>
+                    <PerDay rate="100" />
+                </Rate
+                <Restrictions minLOS="1" />
+            </RatePlan>
+        </RoomType>
+    </AvailRateUpdate>
 </AvailRateUpdateRQ>`;
 
 // const xml = '<x:test xmlns:x="uri-x" attr="name" name="value"><mektig>inside</mektig></x:test>';
