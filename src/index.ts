@@ -9,10 +9,16 @@ const expedia =
 	<Authentication username="Hello" password="World" />
 	<Hotel id="123" />
 	<AvailRateUpdate>
-		<DateRange from="2018-01-01Z" sun="true">
-		</DateRange>
-		<DateRange from="2018-01-01Z" sun="true">
-		</DateRange>
+		<DateRange from="2018-01-01Z" sun="true" />
+		<DateRange from="2018-01-01Z" sun="true" />
+		<RoomType id="1">
+			<RatePlan id="2">
+				<Rate>
+					<PerDay rate="100" />
+				</Rate
+				<Restrictions minLOS="1" />
+			</RatePlan>
+		</RoomType>
 	</AvailRateUpdate>
 </AvailRateUpdateRQ>`;
 

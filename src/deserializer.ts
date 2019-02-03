@@ -35,6 +35,13 @@ class DeserializerBuilder implements DOMBuilder {
 		if (schema.xmlType === "root" || schema.xmlType === "element") {
 			if (schema.type === Number || schema.type === Boolean || schema.type === String || schema.type === Date) {
 				parent.value = this.convertValue(xt, parent.schema.type);
+			} else if (typeof schema.type === "function") {
+				// Text inside object, check for a property with XMLText decorator:
+				const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", parent.schema.type) || [];
+				const childSchema = children.find(c => (c.xmlType === "text"));
+				if (childSchema) {
+					parent.value[childSchema.propertyKey] = this.convertValue(xt, childSchema.type);
+				}
 			}
 		}
 	}
@@ -57,7 +64,7 @@ class DeserializerBuilder implements DOMBuilder {
 
 		if (parent.schema.xmlType === "element" || parent.schema.xmlType === "root") {
 			const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", parent.schema.type) || [];
-			const childSchema = children.find(c => (c.xmlType === "element" || c.xmlType === "array") && c.name === localName && c.namespaceUri === (ns ? ns : ''));
+			const childSchema = children.find(c => (c.xmlType === "element" || c.xmlType === "array") && c.name === localName && c.namespaceUri === (ns ? ns : ""));
 			if (!childSchema) {
 				// TODO: fail if complex content in a simple type
 				// console.log("Skipping element " + ns + "/" + localName + "/" + tagName + " (no schema)", el, parent.schema);
@@ -97,7 +104,7 @@ class DeserializerBuilder implements DOMBuilder {
 
 			const arraySchema = parent.schema as ArraySchema;
 
-			if (localName !== arraySchema.itemName || (ns ? ns : '') !== arraySchema.namespaceUri) {
+			if (localName !== arraySchema.itemName || (ns ? ns : "") !== arraySchema.namespaceUri) {
 				// Ignore if element is not an item type
 				this.elementStack.push({
 					value: null,
@@ -140,7 +147,7 @@ class DeserializerBuilder implements DOMBuilder {
 			return;
 		}
 
-		if (top.schema.xmlType === "element" || top.schema.xmlType === 'root') {
+		if (top.schema.xmlType === "element" || top.schema.xmlType === "root") {
 			const propertySchema = parent.schema as PropertySchema;
 			top.value[propertySchema.propertyKey] = parent.value;
 		} else if (top.schema.xmlType === "array") {
@@ -209,7 +216,7 @@ class DeserializerBuilder implements DOMBuilder {
 			const namespaceUri = el.getURI(i); // TODO: enforce namespace, default namespace
 
 			const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", schema.type) || [];
-			const childSchema = children.find((c: any) => c.xmlType === 'attribute' && c.name === localName);
+			const childSchema = children.find((c: any) => c.xmlType === "attribute" && c.name === localName);
 			if (!childSchema) {
 				// console.log("Skipping attribute " + localName + " (no schema)");
 				continue;
@@ -308,8 +315,8 @@ export class XMLDecoratorDeserializer {
 			},
 		};
 
-		var defaultNSMap = { xml: 'http://www.w3.org/XML/1998/namespace'};
-		var entityMap = {'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos':"'"}
+		var defaultNSMap = { xml: "http://www.w3.org/XML/1998/namespace"};
+		var entityMap = {"lt": "<", "gt": ">", "amp": "&", "quot": '"', 'apos':"'"}
 
 		reader.parse(source, defaultNSMap, entityMap);
 		return builder.result;

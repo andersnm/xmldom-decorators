@@ -43,14 +43,19 @@ export class XMLDecoratorSerializer {
             parentNode.appendChild(element);
         }
 
-		const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", type) || [];
-		for (let child of children) {
-			if (child.xmlType === "attribute") {
+        const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", type) || [];
+        for (let child of children) {
+            if (child.xmlType === "attribute") {
                 const value = this.convertValue(data[child.propertyKey], child.type);
                 if (value !== undefined) {
                     element.setAttributeNS(child.namespaceUri, child.name, value);
                 }
-			}
+            } else if (child.xmlType === "text") {
+                const value = this.convertValue(data[child.propertyKey], child.type);
+                if (value !== undefined) {
+                    element.appendChild(this.document.createTextNode(value));
+                }
+            }
 		}
 
 		for (let child of children) {

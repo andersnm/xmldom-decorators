@@ -1,4 +1,4 @@
-import { XMLRoot, XMLElement, XMLAttribute, XMLArray } from '../src/decorators';
+import { XMLRoot, XMLElement, XMLAttribute, XMLArray, XMLText } from '../src/decorators';
 import { XMLDecoratorSerializer } from '../src/serializer';
 import { XMLDecoratorDeserializer } from '../src/deserializer';
 
@@ -10,6 +10,15 @@ class EmptyRoot {
 class StringInRoot {
 	@XMLElement()
 	name: string = "";
+}
+
+@XMLRoot()
+class TextInRoot {
+	@XMLAttribute()
+	name: string = "";
+
+	@XMLText()
+	value: string = "";
 }
 
 @XMLRoot()
@@ -47,6 +56,15 @@ describe("Decorators", () => {
 		expect(result).toBe("<EmptyRoot/>");
 
 		const x: any = deserialize(result, EmptyRoot);
+		expect(x).toEqual(o);
+	});
+
+	test("Text in root", () => {
+		const o: TextInRoot = { name: "Hello World", value: "Inner text" };
+		const result = serialize(o, TextInRoot);
+		expect(result).toBe('<TextInRoot name="Hello World">Inner text</TextInRoot>');
+
+		const x: any = deserialize(result, TextInRoot);
 		expect(x).toEqual(o);
 	});
 

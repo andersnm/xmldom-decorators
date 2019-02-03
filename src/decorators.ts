@@ -3,26 +3,26 @@ import "reflect-metadata";
 export interface BaseSchema {
 	name: string;
 	namespaceUri: string;
-	xmlType: 'root' | 'element' | 'attribute' | 'array'/* | 'value'*/;
+	xmlType: "root" | "element" | "attribute" | "array" | "text";
 	type: any;
 }
 
 export interface RootSchema extends BaseSchema {
-	xmlType: 'root';
+	xmlType: "root";
 }
 
 export interface ValueSchema extends BaseSchema {
-	xmlType: 'element' | 'attribute' | 'array'/* | 'value'*/;
+	xmlType: "element" | "attribute" | "array" | "text";
 	enum: object|null;
 }
 
 export interface PropertySchema extends ValueSchema {
-	xmlType: 'element' | 'attribute' | 'array';
+	xmlType: "element" | "attribute" | "array" | "text";
 	propertyKey: string;
 }
 
 export interface ArraySchema extends PropertySchema {
-	xmlType: 'array';
+	xmlType: "array";
 	itemName: string;
 	itemType: any;
 	nested: boolean;
@@ -33,7 +33,7 @@ export function XMLRoot(opts: Partial<RootSchema> = {}) {
 		const rootSchema: RootSchema = {
 			name: opts.name || target.name,
 			namespaceUri: opts.namespaceUri || "",
-			xmlType: 'root',
+			xmlType: "root",
 			type: target,
 		};
 
@@ -63,7 +63,7 @@ export function XMLElement<T>(opts: Partial<PropertySchema> = {}) {
 			name: opts.name || propertyKey || "",
 			namespaceUri: opts.namespaceUri || "",
 			type: type,
-			xmlType: 'element',
+			xmlType: "element",
 			enum: opts.enum || null,
 		});
 	}
@@ -82,7 +82,7 @@ export function XMLAttribute(opts: Partial<PropertySchema> = {}) {
 			name: opts.name || propertyKey || "",
 			namespaceUri: opts.namespaceUri || "",
 			type: type,
-			xmlType: 'attribute',
+			xmlType: "attribute",
 			enum: opts.enum || null,
 		});
 	}
@@ -119,11 +119,35 @@ export function XMLArray(opts: Partial<ArraySchema> = {}) {
 			name: name,
 			namespaceUri: opts.namespaceUri || "",
 			type: type,
-			xmlType: 'array',
+			xmlType: "array",
 			enum: null,
 			itemName: itemName,
 			itemType: opts.itemType,
 			nested: nested,
+		};
+
+		targetChildren.push(arraySchema);
+	}
+}
+
+export function XMLText(opts: Partial<any> = {}) {
+	return function(target: any, propertyKey: string) {
+		const type = Reflect.getMetadata("design:type", target, propertyKey);
+
+		const targetChildren: PropertySchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+		if (targetChildren.length === 0) {
+			Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
+		}
+		
+		const name = opts.name || propertyKey;
+		
+		const arraySchema: PropertySchema = {
+			propertyKey: propertyKey,
+			name: name,
+			namespaceUri: opts.namespaceUri || "",
+			type: type,
+			xmlType: "text",
+			enum: null,
 		};
 
 		targetChildren.push(arraySchema);
