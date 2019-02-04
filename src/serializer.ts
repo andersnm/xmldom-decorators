@@ -2,10 +2,15 @@ import { PropertySchema, ArraySchema } from "./decorators";
 import { DOMImplementation, XMLSerializer } from "xmldom";
 
 export class XMLDecoratorSerializer {
-    factory: DOMImplementation = new DOMImplementation();
-    document: Document|null = null;
+    private factory: DOMImplementation = new DOMImplementation();
+    private document: Document|null = null;
+    private prefixCounter: number = 0;
+    private prefixMap: {[key: string]: string} = {};
 
-    public serialize(data: any, type: Function): string {
+    public serialize(data: any, type: Function, defaultNSPrefixMap?: any): string {
+        this.prefixCounter = 0;
+        this.prefixMap = { ...defaultNSPrefixMap };
+
         const xmlRootSchemas = Reflect.getMetadata("xml:root", type);
         if (!xmlRootSchemas) {
             throw new Error("Root type must specify @xmlRoot decorator");
@@ -13,7 +18,7 @@ export class XMLDecoratorSerializer {
 
         // TODO: find matching schema
         const xmlSchema = xmlRootSchemas[0];
-        this.document = this.factory.createDocument(xmlSchema.namespaceUri, xmlSchema.name, null);
+        this.document = this.factory.createDocument(xmlSchema.namespaceUri, this.getQualifiedName(xmlSchema.name, xmlSchema.namespaceUri), null);
         this.serializeObject(null, type, data, xmlSchema.name, xmlSchema.namespaceUri);
 
         if (!this.document) {
@@ -26,6 +31,25 @@ export class XMLDecoratorSerializer {
         return result;
     }
 
+    private getQualifiedAttributeName(attributeName: string, namespaceUri: string|null): string {
+        // null namespaceUri = scoped to element, no prefix
+        if (namespaceUri === null) {
+            return attributeName;
+        }
+
+        return this.getQualifiedName(attributeName, namespaceUri);
+    }
+
+    private getQualifiedName(elementName: string, namespaceUri: string): string {
+        if (!this.prefixMap.hasOwnProperty(namespaceUri)) {
+            this.prefixMap[namespaceUri] = "p" + this.prefixCounter;
+            this.prefixCounter++;
+        }
+
+        var prefix = this.prefixMap[namespaceUri];
+        return prefix.length > 0 ? (prefix + ":" + elementName) : elementName;
+    }
+
     private serializeObject(parentNode: Node|null, type: Function, data: any, elementName: string, namespaceUri: string) {
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
@@ -35,11 +59,7 @@ export class XMLDecoratorSerializer {
         if (parentNode === null) {
             element = this.document.documentElement;
         } else {
-            if (!this.document) {
-                throw new Error("Internal error. Document is null.");
-            }
-    
-            element = this.document.createElementNS(namespaceUri, elementName);
+            element = this.document.createElementNS(namespaceUri, this.getQualifiedName(elementName, namespaceUri));
             parentNode.appendChild(element);
         }
 
@@ -48,7 +68,8 @@ export class XMLDecoratorSerializer {
             if (child.xmlType === "attribute") {
                 const value = this.convertValue(data[child.propertyKey], child.type);
                 if (value !== undefined) {
-                    element.setAttributeNS(child.namespaceUri, child.name, value);
+                    const attrName = this.getQualifiedAttributeName(child.name, child.namespaceUri);
+                    element.setAttributeNS(child.namespaceUri, attrName, value);
                 }
             } else if (child.xmlType === "text") {
                 const value = this.convertValue(data[child.propertyKey], child.type);
@@ -91,8 +112,8 @@ export class XMLDecoratorSerializer {
     }
 
     private serializeElement(parentNode: Node, schema: PropertySchema, data: any) {
-        if (!this.document) {
-            throw new Error("Internal error. Document is null.");
+        if (!this.document || schema.namespaceUri === null) {
+            throw new Error("Internal error.");
         }
 
         if (schema.type === Number || schema.type === Boolean || schema.type === String || schema.type === Date) {
@@ -100,27 +121,27 @@ export class XMLDecoratorSerializer {
         } else if (typeof schema.type === "function") {
             this.serializeObject(parentNode, schema.type, data, schema.name, schema.namespaceUri);
         } else {
-            throw new Error("Canot serialize type " + schema.type);
+            throw new Error("Cannot serialize type " + schema.type);
         }
     }
     
     private serializeValueElement(parentNode: Node, schema: PropertySchema, data: any) {
-        if (!this.document) {
-            throw new Error("Internal error. Document is null.");
+        if (!this.document || schema.namespaceUri === null) {
+            throw new Error("Internal error.");
         }
 
-        const element = this.document.createElementNS(schema.namespaceUri, schema.name);
+        const element = this.document.createElementNS(schema.namespaceUri, this.getQualifiedName(schema.name, schema.namespaceUri));
         element.appendChild(this.document.createTextNode(this.convertValue(data, schema.type)));
         parentNode.appendChild(element);
     }
 
     private serializeArray(parentNode: Node, schema: ArraySchema, data: any[]) {
-        if (!this.document) {
-            throw new Error("Internal error. Document is null.");
+        if (!this.document || schema.namespaceUri === null) {
+            throw new Error("Internal error.");
         }
 
         if (schema.nested) {
-            var nestedNode = this.document.createElementNS(schema.namespaceUri, schema.name);
+            var nestedNode = this.document.createElementNS(schema.namespaceUri, this.getQualifiedName(schema.name, schema.namespaceUri));
             parentNode.appendChild(nestedNode);
             parentNode = nestedNode;
         }

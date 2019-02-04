@@ -1,8 +1,18 @@
 import "reflect-metadata";
 
 export interface BaseSchema {
+    /**
+     * The unqualified XML node name. Must not specify a prefix.
+     */
     name: string;
-    namespaceUri: string;
+
+    /**
+     * The XML namespace URI for this node. Only attributes can have null namespaceUri.
+     * Default for elements: "". Empty string.
+     * Default for attributes: null. Implies it belongs to the element.
+     */
+    namespaceUri: string|null;
+
     xmlType: "root" | "element" | "attribute" | "array" | "text";
     type: any;
 }
@@ -80,7 +90,7 @@ export function XMLAttribute(opts: Partial<PropertySchema> = {}) {
         targetChildren.push({
             propertyKey: propertyKey,
             name: opts.name || propertyKey || "",
-            namespaceUri: opts.namespaceUri || "",
+            namespaceUri: opts.namespaceUri || null,
             type: type,
             xmlType: "attribute",
             enum: opts.enum || null,

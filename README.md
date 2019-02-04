@@ -58,9 +58,12 @@ Deserializes an XML string into a JavaScript object. The type parameter must be 
 
 ### XMLDecoratorSerializer
 
-#### `serialize(data: any, type: Function): string`
+#### `serialize(data: any, type: Function, defaultNSPrefixMap?: {[key: string]: string}): string`
 
-Serializes a JavaScript object into an XML string. The type parameter must be a class with the `@XMLRoot` decorator.
+Serializes a JavaScript object into an XML string.
+
+- `type` - Must be a class with the `@XMLRoot` decorator.
+- `defaultNSPrefixMap` - Optional dictionary with namespace URI as the key and prefix as the value. Overrides the default namespace prefixes (p0, p1...). All prefixes must be unique. The prefix can be an empty string for no prefix.
 
 ## Decorators
 
@@ -85,10 +88,14 @@ Applied to class members which define an array of XML elements, with or without 
 - `itemType: any` - The type of array items. Required
 - `nested: boolean` - Specifies if there is a container element for the array items. Default: true
 	
+#### `@XMLText()`
+
+Applied to class members which define the text content of an XML element.
+
 ## TODO
 
-- @XMLText({name?})
 - Allow to specify xs:integer, decimal, float on number types
+- Separate schemas and decorator options
 - Replace the XML parser
 - Base classes / inheritance
 - xsd<->ts codegen tool
