@@ -1,5 +1,6 @@
 import { PropertySchema, ArraySchema } from "./decorators";
 import { DOMImplementation, XMLSerializer } from "xmldom";
+import { getArrayItemName } from "./deserializer";
 
 export class XMLDecoratorSerializer {
     private factory: DOMImplementation = new DOMImplementation();
@@ -146,10 +147,12 @@ export class XMLDecoratorSerializer {
             parentNode = nestedNode;
         }
 
+        const itemName = getArrayItemName(schema);
+
         const itemSchema: PropertySchema = {
             ...schema,
-            type: schema.itemType,
-            name: schema.itemName,
+            type: schema.itemType(),
+            name: itemName,
         };
         
         for (var i = 0; i < data.length; i++) {

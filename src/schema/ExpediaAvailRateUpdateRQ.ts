@@ -1,4 +1,4 @@
-import { XMLRoot, XMLElement, XMLArray, XMLAttribute } from '../decorators';
+import { XMLRoot, XMLElement, XMLArray, XMLAttribute, XMLText } from '../decorators';
 
 export class Authentication {
     @XMLAttribute()
@@ -12,10 +12,10 @@ export class Authentication {
 // @XMLType({namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06"})
 export class DateRange {
     @XMLAttribute()
-    from: Date = null as any;
+    from: Date = new Date(-8640000000000000);
 
     @XMLAttribute()
-    to: Date = null as any;
+    to: Date = new Date(-8640000000000000);
 
     @XMLAttribute()
     sun?: boolean;
@@ -70,7 +70,7 @@ export class Rate {
     @XMLElement({name: "PerDay", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06" })
     perDay?: RatePerDay;
 
-    @XMLArray({name: "PerOccupancy", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: RatePerOccupancy })
+    @XMLArray({name: "PerOccupancy", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => RatePerOccupancy })
     perOccupancy?: RatePerOccupancy[];
 
     @XMLElement({name: "PerPerson", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06" })
@@ -98,10 +98,10 @@ export class RatePlan {
     @XMLAttribute()
     closed?: boolean;
 
-    @XMLArray({name: "Rate", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: Rate, nested: false })
+    @XMLArray({name: "Rate", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => Rate, nested: false })
     rate?: Rate[];
 
-    @XMLArray({name: "Restrictions", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: Restriction, nested: false })
+    @XMLArray({name: "Restrictions", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => Restriction, nested: false })
     restrictions?: Restriction[];
 }
 
@@ -117,18 +117,21 @@ export class RoomType {
     @XMLAttribute()
     id?: string;
 
+    @XMLAttribute()
+    closed?: boolean;
+
     @XMLElement({name: "Inventory", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06" })
     inventory?: Inventory;
 
-    @XMLArray({name: "RatePlan", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: RatePlan, nested: false })
+    @XMLArray({name: "RatePlan", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => RatePlan, nested: false })
     ratePlan?: RatePlan[];
 }
 
 export class AvailRateUpdate {
-    @XMLArray({name: "DateRange", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: DateRange, nested: false})
-    dateRange: DateRange[] = null as any;
+    @XMLArray({name: "DateRange", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => DateRange, nested: false})
+    dateRange: DateRange[] = [];
 
-    @XMLArray({name: "RoomType", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: RoomType, nested: false})
+    @XMLArray({name: "RoomType", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => RoomType, nested: false})
     roomType?: RoomType[];
 }
 
@@ -141,10 +144,10 @@ export class Hotel {
 export class AvailRateUpdateRQ {
 
     @XMLElement({name: "Authentication", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06"})
-    authentication: Authentication = null as any;
+    authentication: Authentication = new Authentication();
 
     @XMLElement({name: "Hotel", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06"})
-    hotel: Hotel = null as any;
+    hotel: Hotel = new Hotel();
 
     /*
     Legacy
@@ -154,6 +157,28 @@ export class AvailRateUpdateRQ {
     @XMLElement({name: "RoomType", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06"})
     roomType?: any;*/
 
-    @XMLArray({name: "AvailRateUpdate", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: AvailRateUpdate, nested: false})
+    @XMLArray({name: "AvailRateUpdate", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2011/06", itemType: () => AvailRateUpdate, nested: false})
     availRateUpdate?: AvailRateUpdate[];
+}
+
+export class ErrorType {
+    @XMLAttribute()
+    code: number = 0;
+
+    @XMLText()
+    value: string = "";
+}
+
+export class Success {
+    @XMLArray({name: "Warning", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2007/02", itemType: () => ErrorType, nested: false})
+    warning?: ErrorType[];
+}
+
+@XMLRoot({namespaceUri: "http://www.expediaconnect.com/EQC/AR/2007/02"})
+export class AvailRateUpdateRS {
+    @XMLElement({name: "Success", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2007/02"})
+    success?: Success;
+
+    @XMLArray({name: "Error", namespaceUri: "http://www.expediaconnect.com/EQC/AR/2007/02", itemType: () => ErrorType, nested: false})
+    error?: ErrorType[];
 }

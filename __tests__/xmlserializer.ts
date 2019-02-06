@@ -32,20 +32,38 @@ class DateInRoot {
 
 @XMLRoot()
 class NestedArrayInRoot {
-	@XMLArray({itemType: String})
+	@XMLArray({itemType: () => String})
 	names: string[] = [];
 }
 
 @XMLRoot()
 class ComplexNestedArrayInRoot {
-	@XMLArray({itemType: DateInRoot})
+	@XMLArray({itemType: () => DateInRoot})
 	dates: DateInRoot[] = [];
 }
 
 @XMLRoot()
 class FlatArrayInRoot {
-	@XMLArray({itemType: String, nested: false})
+	@XMLArray({itemType: () => String, nested: false})
 	names: string[] = [];
+}
+
+@XMLRoot()
+class CyclicElementType {
+	@XMLArray({itemName: "element", itemType: () => CyclicElement, nested: false})
+	elements: CyclicElement[] = [];
+}
+
+@XMLRoot()
+class CyclicElement {
+	@XMLElement()
+	type: CyclicElementType = new CyclicElementType();
+}
+
+@XMLRoot()
+class CyclicRoot {
+	@XMLElement()
+	element: CyclicElement = new CyclicElement();
 }
 
 describe("Decorators", () => {
@@ -107,6 +125,15 @@ describe("Decorators", () => {
 		expect(x2).toEqual(o);
 	});
 
+	test("Empty nested array in root", () => {
+		const o: NestedArrayInRoot = { names: [ ] };
+		const result = serialize(o, NestedArrayInRoot);
+		expect(result).toBe("<NestedArrayInRoot><names/></NestedArrayInRoot>");
+
+		const x: any = deserialize(result, NestedArrayInRoot);
+		expect(x).toEqual(o);
+	});
+
 	test("Complex nested array in root", () => {
 		const o: ComplexNestedArrayInRoot = {
 			dates: [
@@ -129,11 +156,29 @@ describe("Decorators", () => {
 		const x: any = deserialize(result, FlatArrayInRoot);
 		expect(x).toEqual(o);
 	});
+
+	test("Empty flat array in root", () => {
+		const o: FlatArrayInRoot = { names: [ ] };
+		const result = serialize(o, FlatArrayInRoot);
+		expect(result).toBe("<FlatArrayInRoot/>");
+
+		const x: any = deserialize(result, FlatArrayInRoot);
+		expect(x).toEqual(o);
+	});
+
+	test("Cyclic types", () => {
+		const o: CyclicRoot = { element: { type: { elements: [ { type: { elements: [ ]} }]} } };
+		const result = serialize(o, CyclicRoot);
+		expect(result).toBe("<CyclicRoot><element><type><elements><type/></elements></type></element></CyclicRoot>");
+
+		const x: any = deserialize(result, CyclicRoot);
+		expect(x).toEqual(o);
+	});
 });
 
 function serialize(data: any, type: Function): string {
 	const serializer = new XMLDecoratorSerializer();
-	return serializer.serialize(data, type);
+	return serializer.serialize(data, type, {'':''});
 }
 
 function deserialize(text: string, type: Function): any {

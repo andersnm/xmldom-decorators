@@ -1,6 +1,14 @@
 import { XMLReader, Locator, DOMBuilder, ElementAttributes } from "xmldom/sax";
 import { RootSchema, PropertySchema, ArraySchema, ValueSchema, BaseSchema } from "./decorators";
 
+export function getArrayItemName(schema: ArraySchema): string {
+    if (schema.nested) {
+        return schema.itemName || schema.itemType().name;
+    }
+
+    return schema.name;
+}
+
 interface ElementContext {
     schema: BaseSchema | null;
     value: any;
@@ -88,11 +96,11 @@ class DeserializerBuilder implements DOMBuilder {
                 });
 
                 const itemSchema: ValueSchema = {
-                    name: arraySchema.itemName,
+                    name: getArrayItemName(arraySchema),
                     namespaceUri: arraySchema.namespaceUri,
                     xmlType: "element",
                     enum: null,
-                    type: arraySchema.itemType,
+                    type: arraySchema.itemType(),
                 };
                 this.pushValue(itemSchema, el);
     
@@ -104,7 +112,8 @@ class DeserializerBuilder implements DOMBuilder {
 
             const arraySchema = parent.schema as ArraySchema;
 
-            if (localName !== arraySchema.itemName || (ns ? ns : "") !== arraySchema.namespaceUri) {
+            const itemName = getArrayItemName(arraySchema);
+            if (localName !== itemName || (ns ? ns : "") !== arraySchema.namespaceUri) {
                 // Ignore if element is not an item type
                 this.elementStack.push({
                     value: null,
@@ -114,11 +123,11 @@ class DeserializerBuilder implements DOMBuilder {
             }
 
             const itemSchema: ValueSchema = {
-                name: arraySchema.itemName,
+                name: itemName,
                 namespaceUri: arraySchema.namespaceUri,
                 xmlType: "element",
                 enum: null,
-                type: arraySchema.itemType,
+                type: arraySchema.itemType(),
             };
             this.pushValue(itemSchema, el);
         } else {
@@ -196,7 +205,7 @@ class DeserializerBuilder implements DOMBuilder {
             throw new Error("Expected root element '" + rootSchema.name + "' but got '" + localName + "'");
         }
 
-        const value: any = {};
+        const value: any = new rootSchema.type; // TODO: construct strategy
         this.elementStack.push({
             value: value,
             schema: rootSchema,
@@ -246,7 +255,7 @@ class DeserializerBuilder implements DOMBuilder {
             });
         } else if (typeof schema.type === "function") {
             // Complex object
-            const value: any = {}; // new schema.type; // TODO: construct
+            const value: any = new schema.type; // TODO: construct strategy
             this.setAttributes(value, schema, el);
 
             this.elementStack.push({

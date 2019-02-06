@@ -85,7 +85,7 @@ Applied to class members which define an array of XML elements, with or without 
 
 - `name: string` - The name of the array element(s). Default: the name of the property the decorator was applied to
 - `itemName: string` - The name of array item elements inside the container element, if there is one. Default: the name of the item type
-- `itemType: any` - The type of array items. Required
+- `itemType: () => Function` - Callback returning the type of array items. Required
 - `nested: boolean` - Specifies if there is a container element for the array items. Default: true
 	
 #### `@XMLText()`
@@ -96,10 +96,14 @@ Applied to class members which define the text content of an XML element.
 
 - Allow to specify xs:integer, decimal, float on number types
 - Separate schemas and decorator options
+- Object construction strategy
+- Validate required elements/attributes
+- Fail on errors
+- Scheme for inheriting namespaces instead of specifying namespace everywhere
 - Replace the XML parser
 - Base classes / inheritance
 - xsd<->ts codegen tool
 - More control over dates
 - Recommendations for defaults
 - Enums
-- Strict options
+- Strictness options

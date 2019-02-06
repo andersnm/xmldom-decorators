@@ -31,10 +31,25 @@ export interface PropertySchema extends ValueSchema {
     propertyKey: string;
 }
 
+export type TypeGetter = () => Function;
+
 export interface ArraySchema extends PropertySchema {
     xmlType: "array";
-    itemName: string;
-    itemType: any;
+
+    /**
+     * Only applicable to arrays wrapped in a container element. Defaults to itemType().name if null.
+     */
+    itemName: string|null;
+
+    /**
+     * A method which returns the array item type.
+     * (The item type cannot be derived from the decorator metadata. The item type is a callback to support cyclic references to types defined later in the file)
+     */
+    itemType: TypeGetter;
+
+    /**
+     * Indicates whether the array is wrapped in a container XML element. 
+     */
     nested: boolean;
 }
 
@@ -116,10 +131,10 @@ export function XMLArray(opts: Partial<ArraySchema> = {}) {
         
         const name = opts.name || propertyKey;
         const nested = opts.nested !== undefined ? opts.nested : true;
-        
+
         let itemName;
         if (nested) {
-            itemName = opts.itemName || opts.itemType.name;
+            itemName = opts.itemName || null; // default to itemType().name later if null
         } else {
             itemName = name;
         }

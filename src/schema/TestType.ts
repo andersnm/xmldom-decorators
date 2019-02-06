@@ -4,10 +4,10 @@ export class FrisparkType {
     @XMLAttribute()
     x: string = "";
 
-    @XMLArray({itemType: Number, itemName: "num"})
+    @XMLArray({itemType: () => Number, itemName: "num"})
     nums?: number[];
 
-    @XMLArray({itemType: String, itemName: "num", nested: false })
+    @XMLArray({itemType: () => String, itemName: "num", nested: false })
     s?: string[];
 }
 
