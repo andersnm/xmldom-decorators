@@ -32,6 +32,10 @@ class DeserializerBuilder implements DOMBuilder {
     }
 
     characters(xt: string, start: number, length: number): void {
+        if (this.elementStack.length === 0) {
+            return; // Ignore f.ex whitespace between <?xml...> and root element
+        }
+
         const parent = this.elementStack[this.elementStack.length - 1];
         if (!parent.schema) {
             return;
@@ -145,6 +149,8 @@ class DeserializerBuilder implements DOMBuilder {
         if (!parent.schema) {
             return;
         }
+
+        // TODO: validate object: missing properties
 
         if (this.elementStack.length === 0) {
             this.result = parent.value;
@@ -301,7 +307,7 @@ class DeserializerBuilder implements DOMBuilder {
 
 export class XMLDecoratorDeserializer {
     
-    deserialize(source: string, type: Function): any {
+    deserialize<T>(source: string, type: Function): T {
 
         // TODO: array of types; instead of array of roots on one type
         const xmlRootSchemas: RootSchema[] = Reflect.getMetadata("xml:root", type);
@@ -311,23 +317,35 @@ export class XMLDecoratorDeserializer {
 
         var reader = new XMLReader();
         var builder = new DeserializerBuilder(xmlRootSchemas);
+        builder.locator = {
+            columnNumber: 0,
+            lineNumber: 0,
+        };
+
         reader.domBuilder = builder;
+
+        var errors: Error[] = [];
+
         reader.errorHandler = {
             warning(msg: any) {
-                console.warn("Warning: " + msg);
+                errors.push(new Error(msg + " (" + builder.locator.lineNumber + ":" + builder.locator.columnNumber + ")"));
             },
             error(msg: any) {
-                console.error("Error: " + msg);
+                errors.push(new Error(msg + " (" + builder.locator.lineNumber + ":" + builder.locator.columnNumber + ")"));
             },
             fatalError(msg: any) {
-                console.error("Fatal: " + msg);
+                errors.push(new Error(msg + " (" + builder.locator.lineNumber + ":" + builder.locator.columnNumber + ")"));
             },
         };
 
         var defaultNSMap = { xml: "http://www.w3.org/XML/1998/namespace"};
-        var entityMap = {"lt": "<", "gt": ">", "amp": "&", "quot": '"', 'apos':"'"}
+        var entityMap = {"lt": "<", "gt": ">", "amp": "&", "quot": '"', "apos":"'"}
 
         reader.parse(source, defaultNSMap, entityMap);
-        return builder.result;
+        if (errors.length > 0) {
+            throw errors[0];
+        }
+
+        return builder.result as T;
     }
 }

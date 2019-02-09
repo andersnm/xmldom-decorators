@@ -10,7 +10,7 @@ export class XMLDecoratorSerializer {
 
     public serialize(data: any, type: Function, defaultNSPrefixMap?: any): string {
         this.prefixCounter = 0;
-        this.prefixMap = { ...defaultNSPrefixMap };
+        this.prefixMap = { ...(defaultNSPrefixMap || {"": ""}) };
 
         const xmlRootSchemas = Reflect.getMetadata("xml:root", type);
         if (!xmlRootSchemas) {

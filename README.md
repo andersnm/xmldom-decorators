@@ -13,7 +13,7 @@ export class MyXmlType {
 	@XMLElement()
 	b: string = "";
 
-	@XMLArray({itemName: "v", itemType: Number})
+	@XMLArray({itemName: "v", itemType: () => Number})
 	n: number[] = [];
 }
 ```
@@ -92,13 +92,55 @@ Applied to class members which define an array of XML elements, with or without 
 
 Applied to class members which define the text content of an XML element.
 
+## Limitations and notes
+
+TypeScript's decorator metadata suffers certain limitations developers must be aware of when writing schemas,
+and be able to work around if needed.
+
+Decorator metadata cannot be attached to interfaces, so the (de)serializer is based around classes. This implies any non-optional class members must have a default value.
+
+The following class(es) demonstrate potential pitfalls with decorators applied to class members:
+
+```typescript
+@XMLRoot()
+class Test {
+	// Properties without a decorator will not be (de)serialized
+	notEmittedProperty: string = "";
+
+	// The XML array itemType must be a callback which returns the array item type
+	// Decorator metadata cannot directly reference types declared later in the file.
+	// Decorator metadata does not have information about array item types.
+	@XMLArray({itemType: () => Number})
+	intArray: Number[] = [];
+
+	// Optional attributes must be set explicitly (NOTE: not implemented yet)
+	// Decorator metadata does have information about the '?' type modifier.
+	@XMLElement({optional: true})
+	value?: string;
+
+	// Decorators applied to members with a class type declared later in the file
+	// will cause a runtime error. This means ordering of classes is important,
+	// and some situations require a workaround using arrays.
+
+	// @XMLElement() <--- RUNTIME ERROR "ForwardClass is not defined"
+	// forward?: ForwardClass;
+
+	// Workaround with array still allows to (de)serialize the XML:
+	@XMLArray({itemType: () => ForwardClass, nested: false})
+	forward?: ForwardClass[];
+}
+
+class ForwardClass {
+}
+
+```
+
 ## TODO
 
 - Allow to specify xs:integer, decimal, float on number types
 - Separate schemas and decorator options
 - Object construction strategy
 - Validate required elements/attributes
-- Fail on errors
 - Scheme for inheriting namespaces instead of specifying namespace everywhere
 - Replace the XML parser
 - Base classes / inheritance

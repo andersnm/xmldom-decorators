@@ -178,7 +178,7 @@ describe("Decorators", () => {
 
 function serialize(data: any, type: Function): string {
 	const serializer = new XMLDecoratorSerializer();
-	return serializer.serialize(data, type, {'':''});
+	return serializer.serialize(data, type);
 }
 
 function deserialize(text: string, type: Function): any {
