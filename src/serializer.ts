@@ -2,7 +2,11 @@ import { PropertySchema, ArraySchema } from "./decorators";
 import { DOMImplementation, XMLSerializer } from "xmldom";
 import { getArrayItemName } from "./deserializer";
 
-export class XMLDecoratorSerializer {
+export interface SerializerContext {
+    getQualifiedName(elementName: string, namespaceUri: string): string;
+}
+
+export class XMLDecoratorSerializer implements SerializerContext {
     private factory: DOMImplementation = new DOMImplementation();
     private document: Document|null = null;
     private prefixCounter: number = 0;
@@ -41,7 +45,7 @@ export class XMLDecoratorSerializer {
         return this.getQualifiedName(attributeName, namespaceUri);
     }
 
-    private getQualifiedName(elementName: string, namespaceUri: string): string {
+    public getQualifiedName(elementName: string, namespaceUri: string): string {
         if (!this.prefixMap.hasOwnProperty(namespaceUri)) {
             this.prefixMap[namespaceUri] = "p" + this.prefixCounter;
             this.prefixCounter++;
@@ -67,7 +71,12 @@ export class XMLDecoratorSerializer {
         const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", type) || [];
         for (let child of children) {
             if (child.xmlType === "attribute") {
-                const value = this.convertValue(data[child.propertyKey], child.type);
+                let value: any;
+                if (child.factory) {
+                    value = child.factory[1](data[child.propertyKey], this);
+                } else {
+                    value = this.convertValue(data[child.propertyKey], child.type);
+                }
                 if (value !== undefined) {
                     const attrName = this.getQualifiedAttributeName(child.name, child.namespaceUri);
                     element.setAttributeNS(child.namespaceUri, attrName, value);

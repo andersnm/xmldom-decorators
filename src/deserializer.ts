@@ -14,9 +14,14 @@ interface ElementContext {
     value: any;
 }
 
-class DeserializerBuilder implements DOMBuilder {
+export interface DeserializerContext {
+    resolvePrefix(prefix: string): string;
+}
+
+class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     private xmlRootSchemas: RootSchema[];
     private elementStack: ElementContext[] = [];
+    private prefixStack: [string, string][] = [];
     public locator: Locator = null as any as Locator;
     public currentElement: any = null;
     public result: any = null;
@@ -179,10 +184,21 @@ class DeserializerBuilder implements DOMBuilder {
     }
 
     startPrefixMapping(nsPrefix: string, value: string): void {
-        // console.log(nsPrefix, value)
+        // Is called before startElement => no elementStack
+        // Use separate prefix stack
+        this.prefixStack.push([nsPrefix, value]);
     }
 
     endPrefixMapping(prefix: string): void {
+        // Pop the topmost matching prefix
+        for (let i = this.prefixStack.length - 1; i >= 0; i--) {
+            if (this.prefixStack[i][0] === prefix) {
+                this.prefixStack.splice(i, 1);
+                return ;
+            }
+        }
+
+        throw new Error("Internal error. Cannot end prefix mapping.");
     }
 
     comment(source: string, start: number, length: number): void {
@@ -201,6 +217,19 @@ class DeserializerBuilder implements DOMBuilder {
     }
 
     processingInstruction(p1: string, p2: string): void {
+    }
+
+    resolvePrefix(prefix: string): string {
+        let i = this.prefixStack.length - 1;
+        while (i >= 0) {
+            if (prefix === this.prefixStack[i][0]) {
+                return this.prefixStack[i][1];
+            }
+
+            i--;
+        }
+
+        throw new Error("Cannot resolve prefix " + prefix);
     }
 
     private startRoot(ns: string, localName: string, tagName: string, el: ElementAttributes): void {
@@ -237,7 +266,11 @@ class DeserializerBuilder implements DOMBuilder {
                 continue;
             }
 
-            value[childSchema.propertyKey] = this.convertValue(el.getValue(i), childSchema.type);
+            if (childSchema.factory) {
+                value[childSchema.propertyKey] = childSchema.factory[0](el.getValue(i), this); //this.convertValue(el.getValue(i), childSchema.type);
+            } else {
+                value[childSchema.propertyKey] = this.convertValue(el.getValue(i), childSchema.type);
+            }
         }
     }
 

@@ -1,6 +1,26 @@
 import { XMLRoot, XMLElement, XMLAttribute, XMLArray, XMLText } from '../src/decorators';
-import { XMLDecoratorSerializer } from '../src/serializer';
-import { XMLDecoratorDeserializer } from '../src/deserializer';
+import { XMLDecoratorSerializer, SerializerContext } from '../src/serializer';
+import { XMLDecoratorDeserializer, DeserializerContext } from '../src/deserializer';
+
+export interface QName {
+    localName: string;
+    namespaceUri: string;
+}
+
+function QNameReader(value: string, ctx: DeserializerContext): QName {
+    const cpos = value.indexOf(":");
+    const prefix = cpos !== -1 ? value.substr(0, cpos) : "";
+    let namespaceUri = "";
+    if (prefix) {
+        namespaceUri = ctx.resolvePrefix(prefix);
+    }
+
+    return { localName: value.substr(cpos + 1), namespaceUri: namespaceUri };
+}
+
+function QNameWriter(value: QName, ctx: SerializerContext): string {
+    return ctx.getQualifiedName(value.localName, value.namespaceUri);
+}
 
 @XMLRoot()
 class EmptyRoot {
@@ -64,6 +84,12 @@ class CyclicElement {
 class CyclicRoot {
 	@XMLElement()
 	element: CyclicElement = new CyclicElement();
+}
+
+@XMLRoot({namespaceUri: "uri-test"})
+class ResolvePrefix {
+    @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
+	name?: QName;
 }
 
 describe("Decorators", () => {
@@ -172,6 +198,16 @@ describe("Decorators", () => {
 		expect(result).toBe("<CyclicRoot><element><type><elements><type/></elements></type></element></CyclicRoot>");
 
 		const x: any = deserialize(result, CyclicRoot);
+		expect(x).toEqual(o);
+	});
+
+
+	test("Resolve prefix", () => {
+		const o: ResolvePrefix = { name: { localName: "test", namespaceUri: "uri-test"} };
+		const result = serialize(o, ResolvePrefix);
+		expect(result).toBe('<p0:ResolvePrefix name="p0:test" xmlns:p0="uri-test"/>');
+
+		const x: any = deserialize(result, ResolvePrefix);
 		expect(x).toEqual(o);
 	});
 });

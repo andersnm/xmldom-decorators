@@ -1,4 +1,6 @@
 import "reflect-metadata";
+import { DeserializerContext } from "./deserializer";
+import { SerializerContext } from "./serializer";
 
 export interface BaseSchema {
     /**
@@ -26,9 +28,14 @@ export interface ValueSchema extends BaseSchema {
     enum: object|null;
 }
 
+type FactoryReader = (value: string, ctx: DeserializerContext) => any;
+type FactoryWriter = (value: any, ctx: SerializerContext) => string;
+type FactoryTuple = [FactoryReader, FactoryWriter];
+
 export interface PropertySchema extends ValueSchema {
     xmlType: "element" | "attribute" | "array" | "text";
     propertyKey: string;
+    factory?: FactoryTuple;
 }
 
 export type TypeGetter = () => Function;
@@ -106,6 +113,7 @@ export function XMLAttribute(opts: Partial<PropertySchema> = {}) {
             propertyKey: propertyKey,
             name: opts.name || propertyKey || "",
             namespaceUri: opts.namespaceUri || null,
+            factory: opts.factory,
             type: type,
             xmlType: "attribute",
             enum: opts.enum || null,
