@@ -2,6 +2,55 @@ import "reflect-metadata";
 import { DeserializerContext } from "./deserializer";
 import { SerializerContext } from "./serializer";
 
+type FactoryReader = (value: string, ctx: DeserializerContext) => any;
+type FactoryWriter = (value: any, ctx: SerializerContext) => string;
+type FactoryTuple = [FactoryReader, FactoryWriter];
+type TypeGetter = () => Function;
+
+export interface RootOptions {
+    name?: string;
+    namespaceUri?: string;
+}
+
+export interface ElementOptions {
+    name?: string;
+    namespaceUri?: string;
+    enum?: object|null;
+}
+
+export interface ArrayOptions {
+    name?: string;
+    namespaceUri?: string;
+
+    /**
+     * Only applicable to arrays wrapped in a container element. Defaults to itemType().name if null.
+     */
+    itemName?: string|null;
+
+    /**
+     * A method which returns the array item type.
+     * (The item type cannot be derived from the decorator metadata. The item type is a callback to support cyclic references to types defined later in the file)
+     */
+    itemType?: TypeGetter;
+
+    /**
+     * Indicates whether the array is wrapped in a container XML element. 
+     */
+    nested?: boolean;
+}
+
+export interface AttributeOptions {
+    name?: string;
+    namespaceUri?: string;
+    enum?: object|null;
+    factory?: FactoryTuple;
+}
+
+export interface TextOptions {
+    name?: string;
+    namespaceUri?: string;
+}
+
 export interface BaseSchema {
     /**
      * The unqualified XML node name. Must not specify a prefix.
@@ -28,17 +77,11 @@ export interface ValueSchema extends BaseSchema {
     enum: object|null;
 }
 
-type FactoryReader = (value: string, ctx: DeserializerContext) => any;
-type FactoryWriter = (value: any, ctx: SerializerContext) => string;
-type FactoryTuple = [FactoryReader, FactoryWriter];
-
 export interface PropertySchema extends ValueSchema {
     xmlType: "element" | "attribute" | "array" | "text";
     propertyKey: string;
     factory?: FactoryTuple;
 }
-
-export type TypeGetter = () => Function;
 
 export interface ArraySchema extends PropertySchema {
     xmlType: "array";
@@ -60,7 +103,7 @@ export interface ArraySchema extends PropertySchema {
     nested: boolean;
 }
 
-export function XMLRoot(opts: Partial<RootSchema> = {}) {
+export function XMLRoot(opts: RootOptions = {}) {
     return function(target: Function) {
         const rootSchema: RootSchema = {
             name: opts.name || target.name,
@@ -78,7 +121,7 @@ export function XMLRoot(opts: Partial<RootSchema> = {}) {
     }
 }
 
-export function XMLElement<T>(opts: Partial<PropertySchema> = {}) {
+export function XMLElement<T>(opts: ElementOptions = {}) {
     return function(target: T, propertyKey: string) {
         let type = Reflect.getMetadata("design:type", target, propertyKey);
         if (type === Array) {
@@ -101,7 +144,7 @@ export function XMLElement<T>(opts: Partial<PropertySchema> = {}) {
     }
 }
 
-export function XMLAttribute(opts: Partial<PropertySchema> = {}) {
+export function XMLAttribute(opts: AttributeOptions = {}) {
     return function(target: any, propertyKey: string) {
         let type = Reflect.getMetadata("design:type", target, propertyKey);
         let targetChildren: PropertySchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
@@ -121,7 +164,7 @@ export function XMLAttribute(opts: Partial<PropertySchema> = {}) {
     }
 }
 
-export function XMLArray(opts: Partial<ArraySchema> = {}) {
+export function XMLArray(opts: ArrayOptions = {}) {
     return function(target: any, propertyKey: string) {
         const type = Reflect.getMetadata("design:type", target, propertyKey);
         if (type !== Array) {
@@ -163,7 +206,7 @@ export function XMLArray(opts: Partial<ArraySchema> = {}) {
     }
 }
 
-export function XMLText(opts: Partial<any> = {}) {
+export function XMLText(opts: TextOptions = {}) {
     return function(target: any, propertyKey: string) {
         const type = Reflect.getMetadata("design:type", target, propertyKey);
 
