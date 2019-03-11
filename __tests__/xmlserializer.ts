@@ -52,25 +52,25 @@ class DateInRoot {
 
 @XMLRoot()
 class NestedArrayInRoot {
-	@XMLArray({itemType: () => String})
+	@XMLArray({ itemTypes: [{itemType: () => String}] })
 	names: string[] = [];
 }
 
 @XMLRoot()
 class ComplexNestedArrayInRoot {
-	@XMLArray({itemType: () => DateInRoot})
+	@XMLArray({ itemTypes: [{ name: "DateInRoot", itemType: () => DateInRoot}] })
 	dates: DateInRoot[] = [];
 }
 
 @XMLRoot()
 class FlatArrayInRoot {
-	@XMLArray({itemType: () => String, nested: false})
+	@XMLArray({ nested:false, itemTypes: [{itemType: () => String}] })
 	names: string[] = [];
 }
 
 @XMLRoot()
 class CyclicElementType {
-	@XMLArray({itemName: "element", itemType: () => CyclicElement, nested: false})
+	@XMLArray({nested: false, itemTypes: [{itemType: () => CyclicElement}]})
 	elements: CyclicElement[] = [];
 }
 
@@ -87,9 +87,98 @@ class CyclicRoot {
 }
 
 @XMLRoot({namespaceUri: "uri-test"})
-class ResolvePrefix {
+class ResolveAttributePrefix {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
 	name?: QName;
+}
+
+@XMLRoot({name: "main"})
+class MultiRootTypeMain {
+    @XMLAttribute()
+	name?: string;
+}
+
+@XMLRoot({name: "error"})
+class MultiRootTypeError {
+    @XMLAttribute()
+	message?: string;
+}
+
+@XMLRoot({name: "warning"})
+class MultiRootTypeWarning {
+    @XMLAttribute()
+	text?: string;
+}
+
+@XMLRoot({name: "main"})
+@XMLRoot({name: "error"})
+@XMLRoot({name: "warning"})
+class MultiRootDecorator {
+    @XMLAttribute()
+	name?: string;
+
+	@XMLAttribute()
+	message?: string;
+
+	@XMLAttribute()
+	text?: string;
+}
+
+@XMLRoot()
+class MultiArrayItemType {
+	@XMLArray({nested: false, itemTypes: [
+		{name: "thing", itemType: () => ArrayThing, isType: (o) => o.hasOwnProperty("thingID")},
+		{name: "stuff", itemType: () => ArrayStuff, isType: (o) => o.hasOwnProperty("stuffID")},
+	]})
+	elements: (ArrayThing|ArrayStuff)[] = [];
+}
+
+class ArrayThing {
+	@XMLAttribute()
+	thingID: string = "";
+}
+
+class ArrayStuff {
+	@XMLAttribute()
+	stuffID: string = "";
+}
+
+class DerivedMemberTypeBase {
+	type: string = "";
+}
+
+class DerivedMemberType1 extends DerivedMemberTypeBase {
+	@XMLAttribute({type: String})
+	type = "type1";
+
+	@XMLAttribute()
+	name: string = "";
+}
+
+class DerivedMemberType2 extends DerivedMemberTypeBase {
+	@XMLAttribute({type: String})
+	type = "type2";
+
+	@XMLAttribute()
+	fieldName?: number;
+}
+
+@XMLRoot()
+class DerivedMemberType {
+	@XMLElement({types: [
+	    {name: "thing1", itemType: () => DerivedMemberType1, isType: (o) => o.type === "type1"},
+	    {name: "thing2", itemType: () => DerivedMemberType2, isType: (o) => o.type === "type2"},
+	]})
+	thing?: DerivedMemberTypeBase;
+}
+
+@XMLRoot()
+class MultiMemberType {
+	@XMLElement({types: [
+		{name: "thing1", itemType: () => DerivedMemberType1, isType: (o) => o.type === "type1"},
+		{name: "thing2", itemType: () => DerivedMemberType2, isType: (o) => o.type === "type2"}
+	]})
+	thing?: DerivedMemberType1|DerivedMemberType2;
 }
 
 describe("Decorators", () => {
@@ -202,22 +291,116 @@ describe("Decorators", () => {
 	});
 
 
-	test("Resolve prefix", () => {
-		const o: ResolvePrefix = { name: { localName: "test", namespaceUri: "uri-test"} };
-		const result = serialize(o, ResolvePrefix);
-		expect(result).toBe('<p0:ResolvePrefix name="p0:test" xmlns:p0="uri-test"/>');
+	test("Resolve prefix in attribute value", () => {
+		const o: ResolveAttributePrefix = { name: { localName: "test", namespaceUri: "uri-test"} };
+		const result = serialize(o, ResolveAttributePrefix);
+		expect(result).toBe('<p0:ResolveAttributePrefix name="p0:test" xmlns:p0="uri-test"/>');
 
-		const x: any = deserialize(result, ResolvePrefix);
+		const x: any = deserialize(result, ResolveAttributePrefix);
+		expect(x).toEqual(o);
+	});
+
+	test("Multiple root types", () => {
+		var o: MultiRootTypeMain = { name: 'test' };
+		const result = serialize(o, MultiRootTypeMain);
+		expect(result).toBe('<main name="test"/>');
+
+		const x: any = deserialize(result, [ MultiRootTypeMain, MultiRootTypeError, MultiRootTypeWarning ]);
+		expect(x).toEqual(o);
+
+		const y: any = deserialize('<warning />', [ MultiRootTypeMain, MultiRootTypeError, MultiRootTypeWarning ]);
+		expect(y).toBeInstanceOf(MultiRootTypeWarning);
+
+		const z: any = deserialize('<error />', [ MultiRootTypeMain, MultiRootTypeError, MultiRootTypeWarning ]);
+		expect(z).toBeInstanceOf(MultiRootTypeError);
+	});
+
+	test("Multiple root decorators", () => {
+		var o: MultiRootDecorator = { name: 'test' };
+		// <main>
+		const a = serialize(o, MultiRootDecorator, "main");
+		expect(a).toBe('<main name="test"/>');
+		
+		const x: any = deserialize(a, MultiRootDecorator);
+		expect(x).toBeInstanceOf(MultiRootDecorator);
+		expect(x).toEqual(o);
+
+		// <warning>
+		const b = serialize(o, MultiRootDecorator, "warning");
+		expect(b).toBe('<warning name="test"/>');
+
+		const y: any = deserialize(b, MultiRootDecorator);
+		expect(y).toBeInstanceOf(MultiRootDecorator);
+		expect(y).toEqual(o);
+
+		// <error>
+		const c = serialize(o, MultiRootDecorator, "error");
+		expect(c).toBe('<error name="test"/>');
+
+		const z: any = deserialize(c, MultiRootDecorator);
+		expect(z).toBeInstanceOf(MultiRootDecorator);
+		expect(z).toEqual(o);
+	});
+
+	test("Array with multiple item types", () => {
+		const o: MultiArrayItemType = {
+			elements: [
+				{
+					stuffID: "hello",
+				},
+				{
+					thingID: "world",
+				},
+			]
+		};
+
+		const a = serialize(o, MultiArrayItemType);
+		expect(a).toBe('<MultiArrayItemType><stuff stuffID="hello"/><thing thingID="world"/></MultiArrayItemType>');
+
+		const x: any = deserialize(a, MultiArrayItemType);
+		expect(x).toBeInstanceOf(MultiArrayItemType);
+		expect(x).toEqual(o);
+	});
+
+	test("Derived member type", () => {
+		const o: DerivedMemberType = {
+			thing: Object.assign<DerivedMemberType2, Partial<DerivedMemberType2>>(new DerivedMemberType2(), {
+				type: "type2",
+				fieldName: 7,
+			}),
+		};
+
+		const a = serialize(o, DerivedMemberType);
+		expect(a).toBe('<DerivedMemberType><thing2 type="type2" fieldName="7"/></DerivedMemberType>');
+
+		const x: any = deserialize(a, DerivedMemberType);
+		expect(x).toBeInstanceOf(DerivedMemberType);
+		expect(x).toEqual(o);
+	});
+
+	test("Multi member type", () => {
+		const o: MultiMemberType = {
+			thing: Object.assign<DerivedMemberType2, Partial<DerivedMemberType2>>(new DerivedMemberType2(), {
+				type: "type2",
+				fieldName: 7,
+			}),
+		};
+
+		const a = serialize(o, MultiMemberType);
+		expect(a).toBe('<MultiMemberType><thing2 type="type2" fieldName="7"/></MultiMemberType>');
+
+		const x: any = deserialize(a, MultiMemberType);
+		expect(x).toBeInstanceOf(MultiMemberType);
 		expect(x).toEqual(o);
 	});
 });
 
-function serialize(data: any, type: Function): string {
+function serialize(data: any, type: Function, localName?: string, ns?: string): string {
 	const serializer = new XMLDecoratorSerializer();
-	return serializer.serialize(data, type);
+	return serializer.serialize(data, type, null, localName, ns);
 }
 
-function deserialize(text: string, type: Function): any {
+function deserialize(text: string, type: Function|Function[]): any {
 	const deserializer = new XMLDecoratorDeserializer();
 	return deserializer.deserialize(text, type);
 }

@@ -1,17 +1,49 @@
 import { XMLReader, Locator, DOMBuilder, ElementAttributes } from "xmldom/sax";
-import { RootSchema, PropertySchema, ArraySchema, ValueSchema, BaseSchema } from "./decorators";
+import { RootSchema, ArraySchema, BaseSchema, ArrayItemOptions, isRootSchema, isElementSchema, isArraySchema, ElementSchema, TextSchema, AttributeSchema, isTextSchema } from "./decorators";
 
-export function getArrayItemName(schema: ArraySchema): string {
-    if (schema.nested) {
-        return schema.itemName || schema.itemType().name;
+export function getArrayItemName(schema: ArraySchema, opts: ArrayItemOptions): string {
+    if (!schema.nested && !opts.name) {
+        return schema.name;
+    }
+    // if (schema.nested) {
+        return opts.name || (opts.itemType && opts.itemType().name) || "";
+    // }
+
+    // return schema.name;
+}
+
+function getArrayItemType(arraySchema: ArraySchema, localName: string, ns: string): ArrayItemOptions|null {
+    return arraySchema.itemTypes.find(c => getArrayItemName(arraySchema, c) === localName && c.namespaceUri === (ns ? ns : "")) || null;
+}
+
+function getElementType(elementSchema: ElementSchema, localName: string, ns: string): ArrayItemOptions|null {
+    return elementSchema.types.find(c => c.name === localName && c.namespaceUri === (ns ? ns : "")) || null;
+}
+
+function isElementOrArrayOrArrayItem(schema: BaseSchema, localName: string, ns: string) {
+    if (isElementSchema(schema)) {
+        const elementType = getElementType(schema, localName, ns);
+        return !!elementType;
     }
 
-    return schema.name;
+    if (isArraySchema(schema)) {
+        if (schema.nested) {
+            return schema.name === localName && schema.namespaceUri === (ns ? ns : "");
+        }
+
+        const itemType = getArrayItemType(schema, localName, ns);
+        return !!itemType;
+    }
+
+    return false;
 }
 
 interface ElementContext {
-    schema: BaseSchema | null;
+    contextType: "ignore" | "root" | "element" | "array";
+    elementSchema: BaseSchema | null;
     value: any;
+    propertyKey: string | null; // resolved property name, since schema doesnt have it always
+    type: Function | null; // actual resolved element type
 }
 
 export interface DeserializerContext {
@@ -42,20 +74,19 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
         }
 
         const parent = this.elementStack[this.elementStack.length - 1];
-        if (!parent.schema) {
+        if (!parent.type) {
             return;
         }
 
         // console.log("chars", xt, start, length)
 
-        const schema = parent.schema;
-        if (schema.xmlType === "root" || schema.xmlType === "element") {
-            if (schema.type === Number || schema.type === Boolean || schema.type === String || schema.type === Date) {
-                parent.value = this.convertValue(xt, parent.schema.type);
-            } else if (typeof schema.type === "function") {
+        if (parent.contextType === "root" || parent.contextType === "element") {
+            if (parent.type === Number || parent.type === Boolean || parent.type === String || parent.type === Date) {
+                parent.value = this.convertValue(xt, parent.type);
+            } else if (typeof parent.type === "function") {
                 // Text inside object, check for a property with XMLText decorator:
-                const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", parent.schema.type) || [];
-                const childSchema = children.find(c => (c.xmlType === "text"));
+                const children: BaseSchema[] = Reflect.getMetadata("xml:type:children", parent.type) || [];
+                const childSchema = children.find(c => isTextSchema(c)) as TextSchema;
                 if (childSchema) {
                     parent.value[childSchema.propertyKey] = this.convertValue(xt, childSchema.type);
                 }
@@ -71,76 +102,91 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
         const parent = this.elementStack[this.elementStack.length - 1];
 
-        if (!parent.schema) {
-            this.elementStack.push({
-                value: null,
-                schema: null,
-            });
+        if (parent.contextType === "ignore") {
+            this.pushIgnore();
             return;
         }
 
-        if (parent.schema.xmlType === "element" || parent.schema.xmlType === "root") {
-            const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", parent.schema.type) || [];
-            const childSchema = children.find(c => (c.xmlType === "element" || c.xmlType === "array") && c.name === localName && c.namespaceUri === (ns ? ns : ""));
+        if (!parent.type) {
+            throw new Error("Internal error. No type on parent");
+        }
+
+        if (parent.contextType === "root" || parent.contextType === "element") {
+            const children: BaseSchema[] = Reflect.getMetadata("xml:type:children", parent.type) || [];
+
+            const childSchema = children.find(c => isElementOrArrayOrArrayItem(c, localName, ns));
+
             if (!childSchema) {
                 // TODO: fail if complex content in a simple type
-                // console.log("Skipping element " + ns + "/" + localName + "/" + tagName + " (no schema)", el, parent.schema);
-                this.elementStack.push({
-                    value: null,
-                    schema: null,
-                })
+                console.log(localName, ns, "skipping")
+                this.pushIgnore();
                 return;
             }
 
-            if (childSchema.xmlType === "array" && !(childSchema as ArraySchema).nested) {
+            if (isArraySchema(childSchema) && !childSchema.nested) {
+                // non-nested array member on object
 
-                const arraySchema = childSchema as ArraySchema;
+                const itemType = getArrayItemType(childSchema, localName, ns);
+
+                if (!itemType) {
+                    throw new Error("Internal error: could not find non-nested array item type");
+                }
+
+                if (!itemType.itemType) {
+                    throw new Error("Internal error: non-nested array item must specify an itemType");
+                }
 
                 // Push a fake array container for this item, reusing the array value
                 const value = parent.value[childSchema.propertyKey] = parent.value[childSchema.propertyKey] || [];
                 
                 this.elementStack.push({
                     value: value,
-                    schema: childSchema,
+                    elementSchema: childSchema,
+                    contextType: "array",
+                    type: Array,
+                    propertyKey: childSchema.propertyKey,
                 });
 
-                const itemSchema: ValueSchema = {
-                    name: getArrayItemName(arraySchema),
-                    namespaceUri: arraySchema.namespaceUri,
-                    xmlType: "element",
-                    enum: null,
-                    type: arraySchema.itemType(),
-                };
-                this.pushValue(itemSchema, el);
+                this.pushValue(childSchema, itemType.itemType(), null, el);
     
+            } else if (isArraySchema(childSchema) && childSchema.nested) {
+                // nested array member on object
+                this.pushValue(childSchema, Array, childSchema.propertyKey, el);
+            } else if (isElementSchema(childSchema)) {
+                // element member on object
+                const elementType = getElementType(childSchema, localName, ns);
+                if (!elementType) {
+                    throw new Error("Cannot find element");
+                }
+
+                if (!elementType.itemType) {
+                    throw new Error("Cannot find element type");
+                }
+
+                this.pushValue(childSchema, elementType.itemType(), childSchema.propertyKey, el);
             } else {
-                this.pushValue(childSchema, el);
+                throw new Error("Internal error: Expected array or element in object");
             }
 
-        } else if (parent.schema.xmlType === "array") {
+        } else if (parent.contextType === "array") {
 
-            const arraySchema = parent.schema as ArraySchema;
+            const arraySchema = parent.elementSchema as ArraySchema;
 
-            const itemName = getArrayItemName(arraySchema);
-            if (localName !== itemName || (ns ? ns : "") !== arraySchema.namespaceUri) {
+            const itemType = getArrayItemType(arraySchema, localName, ns);
+
+            if (!itemType) {
                 // Ignore if element is not an item type
-                this.elementStack.push({
-                    value: null,
-                    schema: null,
-                })
+                this.pushIgnore();
                 return;
             }
 
-            const itemSchema: ValueSchema = {
-                name: itemName,
-                namespaceUri: arraySchema.namespaceUri,
-                xmlType: "element",
-                enum: null,
-                type: arraySchema.itemType(),
-            };
-            this.pushValue(itemSchema, el);
+            if (!itemType.itemType) {
+                throw new Error("Internal error, no itemType");
+            }
+
+            this.pushValue(arraySchema, itemType.itemType(), null, el);
         } else {
-            throw new Error("Internal error. Found element in " + parent.schema.xmlType);
+            throw new Error("Internal error. Found element in " + parent.contextType);
         }
     }
 
@@ -151,7 +197,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             throw new Error("Unbalanced xml");
         }
 
-        if (!parent.schema) {
+        if (parent.contextType === "ignore") {
             return;
         }
 
@@ -163,23 +209,27 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
         }
 
         var top = this.elementStack[this.elementStack.length - 1];
-        if (top.schema === null) {
+        if (top.elementSchema === null) {
             return;
         }
 
-        if (top.schema.xmlType === "element" || top.schema.xmlType === "root") {
-            const propertySchema = parent.schema as PropertySchema;
-            top.value[propertySchema.propertyKey] = parent.value;
-        } else if (top.schema.xmlType === "array") {
+        if (top.contextType === "element" || top.contextType === "root") {
+            if (!parent.propertyKey) {
+                throw new Error("Expected propertyKey to be set");
+            }
+
+            top.value[parent.propertyKey] = parent.value;
+        } else if (top.contextType === "array") {
+            const arraySchema = top.elementSchema as ArraySchema;
+
             top.value.push(parent.value);
 
             // Pop one more time for non-nested arrays to account for the fake array container
-            const arraySchema = top.schema as ArraySchema;
             if (!arraySchema.nested) {
                 this.elementStack.pop();
             }
         } else {
-            throw new Error("?? " + top.schema.xmlType);
+            throw new Error("?? " + top.contextType);
         }
     }
 
@@ -234,22 +284,35 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
     private startRoot(ns: string, localName: string, tagName: string, el: ElementAttributes): void {
         // TODO: scan multiple roots
-        const rootSchema = this.xmlRootSchemas[0];
+        let rootSchema: RootSchema|null = null;
 
-        if (localName !== rootSchema.name) {
-            throw new Error("Expected root element '" + rootSchema.name + "' but got '" + localName + "'");
+        let rootNames: string[] = [];
+        for (let schema of this.xmlRootSchemas) {
+            rootNames.push(schema.name);
+            if (localName === schema.name && (ns ? ns : "") == schema.namespaceUri) {
+                // console.log("FOUND ROOT", schema)
+                rootSchema = schema;
+                break;
+            }
+        }
+
+        if (!rootSchema) {
+            throw new Error("Expected root element '" + rootNames.join("|") + "' but got '" + localName + "'");
         }
 
         const value: any = new rootSchema.type; // TODO: construct strategy
         this.elementStack.push({
             value: value,
-            schema: rootSchema,
+            elementSchema: rootSchema,
+            contextType: "root",
+            type: rootSchema.type,
+            propertyKey: null,
         });
 
-        this.setAttributes(value, rootSchema, el);
+        this.setAttributes(value, rootSchema.type, el);
     }
 
-    private setAttributes(value: any, schema: BaseSchema, el: ElementAttributes) {
+    private setAttributes(value: any, type: Function, el: ElementAttributes) {
         for (let i = 0; i < el.length; i++) {
             const qName = el.getQName(i);
             if (qName === "xmlns" || qName.startsWith("xmlns:")) {
@@ -259,30 +322,43 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             const localName = el.getLocalName(i);
             const namespaceUri = el.getURI(i); // TODO: enforce namespace, default namespace
 
-            const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", schema.type) || [];
-            const childSchema = children.find((c: any) => c.xmlType === "attribute" && c.name === localName);
+            const children: BaseSchema[] = Reflect.getMetadata("xml:type:children", type) || [];
+            const childSchema = children.find((c: any) => c.xmlType === "attribute" && c.name === localName) as AttributeSchema;
             if (!childSchema) {
                 // console.log("Skipping attribute " + localName + " (no schema)");
                 continue;
             }
 
             if (childSchema.factory) {
-                value[childSchema.propertyKey] = childSchema.factory[0](el.getValue(i), this); //this.convertValue(el.getValue(i), childSchema.type);
+                value[childSchema.propertyKey] = childSchema.factory[0](el.getValue(i), this);
             } else {
                 value[childSchema.propertyKey] = this.convertValue(el.getValue(i), childSchema.type);
             }
         }
     }
 
-    private pushValue(schema: ValueSchema, el: ElementAttributes) {
+    private pushIgnore() {
+        this.elementStack.push({
+            value: null,
+            elementSchema: null,
+            contextType: "ignore",
+            type: null,
+            propertyKey: null,
+        });
+    }
 
-        if (schema.type === Number || schema.type === Boolean || schema.type === String || schema.type === Date) {
+    private pushValue(elementSchema: BaseSchema, type: any, propertyKey: string | null, el: ElementAttributes) {
+
+        if (type === Number || type === Boolean || type === String || type === Date) {
             this.elementStack.push({
                 value: undefined,
-                schema: schema,
+                elementSchema: elementSchema,
+                contextType: "element",
+                type: type,
+                propertyKey: propertyKey,
             });
-        } else if (schema.type === Array) {
-            const arraySchema = schema as ArraySchema;
+        } else if (type === Array) {
+            const arraySchema = elementSchema as ArraySchema;
             if (!arraySchema.nested) {
                 throw new Error("Internal error. Cannot push non-nested array here");
             }
@@ -290,21 +366,27 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             const value: any = [];
             this.elementStack.push({
                 value: value,
-                schema: schema,
+                elementSchema: elementSchema,
+                contextType: "array",
+                type: type,
+                propertyKey: propertyKey,
             });
-        } else if (typeof schema.type === "function") {
+        } else if (typeof type === "function") {
             // Complex object
-            const value: any = new schema.type; // TODO: construct strategy
-            this.setAttributes(value, schema, el);
+            const value: any = new type; // TODO: construct strategy
+            this.setAttributes(value, type, el);
 
             this.elementStack.push({
                 value: value,
-                schema: schema,
+                elementSchema: elementSchema,
+                contextType: "element",
+                type: type,
+                propertyKey: /*schema.*/propertyKey,
             });
-        } else if (Array.isArray(schema.type)) {
+        } else if (Array.isArray(type)) {
             throw new Error("Internal error: Shouldnt be array here");
         } else {
-            throw new Error("Invalid schema type " + schema.type);
+            throw new Error("Invalid schema type " + type);
         }
     }
 
@@ -340,16 +422,29 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
 export class XMLDecoratorDeserializer {
     
-    deserialize<T>(source: string, type: Function): T {
+    deserialize<T>(source: string, type: Function|Function[]): T {
 
         // TODO: array of types; instead of array of roots on one type
-        const xmlRootSchemas: RootSchema[] = Reflect.getMetadata("xml:root", type);
-        if (!xmlRootSchemas) {
-            throw new Error("Root type must specify @xmlRoot decorator");
+        let rootSchemas: RootSchema[]
+        if (Array.isArray(type)) {
+            rootSchemas = [];
+            for (let typeType of type) {
+                var typeRootSchemas: RootSchema[] = Reflect.getMetadata("xml:root", typeType);
+                if (!typeRootSchemas) {
+                    throw new Error("Every root type must specify @xmlRoot decorator");
+                }
+
+                rootSchemas.push(...typeRootSchemas);
+            }
+        } else {
+            rootSchemas = Reflect.getMetadata("xml:root", type);
+            if (!rootSchemas) {
+                throw new Error("Root type must specify @xmlRoot decorator");
+            }
         }
 
         var reader = new XMLReader();
-        var builder = new DeserializerBuilder(xmlRootSchemas);
+        var builder = new DeserializerBuilder(rootSchemas);
         builder.locator = {
             columnNumber: 0,
             lineNumber: 0,

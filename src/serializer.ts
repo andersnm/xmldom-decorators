@@ -1,4 +1,4 @@
-import { PropertySchema, ArraySchema } from "./decorators";
+import { BaseSchema, ElementSchema, ArraySchema, RootSchema, ArrayItemOptions, isAttributeSchema, isTextSchema, isElementSchema, isArraySchema } from "./decorators";
 import { DOMImplementation, XMLSerializer } from "xmldom";
 import { getArrayItemName } from "./deserializer";
 
@@ -12,19 +12,39 @@ export class XMLDecoratorSerializer implements SerializerContext {
     private prefixCounter: number = 0;
     private prefixMap: {[key: string]: string} = {};
 
-    public serialize(data: any, type: Function, defaultNSPrefixMap?: any): string {
+    public serialize(data: any, type: Function, defaultNSPrefixMap?: any, elementName?: string, namespaceUri?: string): string {
         this.prefixCounter = 0;
         this.prefixMap = { ...(defaultNSPrefixMap || {"": ""}) };
 
-        const xmlRootSchemas = Reflect.getMetadata("xml:root", type);
+        const xmlRootSchemas: RootSchema[] = Reflect.getMetadata("xml:root", type);
+
         if (!xmlRootSchemas) {
-            throw new Error("Root type must specify @xmlRoot decorator");
+            throw new Error("Root type must specify @XMLRoot decorator");
         }
 
-        // TODO: find matching schema
-        const xmlSchema = xmlRootSchemas[0];
-        this.document = this.factory.createDocument(xmlSchema.namespaceUri, this.getQualifiedName(xmlSchema.name, xmlSchema.namespaceUri), null);
-        this.serializeObject(null, type, data, xmlSchema.name, xmlSchema.namespaceUri);
+        if (xmlRootSchemas.length > 1 && !elementName) {
+            throw new Error("Element name parameter is required when root type specifies multiple @XMLRoot decorators.");
+        }
+
+        let xmlSchema: RootSchema|null = null;
+        if (xmlRootSchemas.length == 1 && !elementName) {
+            xmlSchema = xmlRootSchemas[0];
+        } else {
+            for (let schema of xmlRootSchemas) {
+                if (elementName === schema.name && (namespaceUri ? namespaceUri : "") == schema.namespaceUri) {
+                    xmlSchema = schema;
+                    break;
+                }
+            }
+        }
+
+        if (!xmlSchema) {
+            throw new Error("Root type does not specify a @XMLRoot decorator for " + elementName);
+        }
+
+        // const xmlSchema = xmlRootSchemas[0];
+        this.document = this.factory.createDocument(xmlSchema.namespaceUri, this.getQualifiedName(xmlSchema.name, xmlSchema.namespaceUri || ""), null);
+        this.serializeObject(null, type, data, xmlSchema.name, xmlSchema.namespaceUri || "");
 
         if (!this.document) {
             throw new Error("Internal error. Document is null.");
@@ -68,9 +88,9 @@ export class XMLDecoratorSerializer implements SerializerContext {
             parentNode.appendChild(element);
         }
 
-        const children: PropertySchema[] = Reflect.getMetadata("xml:type:children", type) || [];
+        const children: BaseSchema[] = Reflect.getMetadata("xml:type:children", type) || [];
         for (let child of children) {
-            if (child.xmlType === "attribute") {
+            if (isAttributeSchema(child)) {
                 let value: any;
                 if (child.factory) {
                     value = child.factory[1](data[child.propertyKey], this);
@@ -81,7 +101,7 @@ export class XMLDecoratorSerializer implements SerializerContext {
                     const attrName = this.getQualifiedAttributeName(child.name, child.namespaceUri);
                     element.setAttributeNS(child.namespaceUri, attrName, value);
                 }
-            } else if (child.xmlType === "text") {
+            } else if (isTextSchema(child)) {
                 const value = this.convertValue(data[child.propertyKey], child.type);
                 if (value !== undefined) {
                     element.appendChild(this.document.createTextNode(value));
@@ -90,15 +110,24 @@ export class XMLDecoratorSerializer implements SerializerContext {
         }
 
         for (let child of children) {
-            const value = data[child.propertyKey];
+            /*
+            TODO const value = data[child.propertyKey];
             if (value === undefined) {
                 continue;
-            }
+            }*/
 
-            if (child.xmlType === "element") {
-                this.serializeElement(element, child, value);
-            } else if (child.xmlType === "array") {
-                this.serializeArray(element, child as ArraySchema, value);
+            if (isElementSchema(child)) {
+                const value = data[child.propertyKey];
+                const elementItemType = this.getArrayItemType(child.types, value);
+                if (!elementItemType || !elementItemType.itemType) {
+                    throw new Error("Internal error " + JSON.stringify(child));
+                }
+
+                const elementType = elementItemType.itemType();
+                this.serializeElement(element, elementItemType.name || elementType.name, elementItemType.namespaceUri || "", elementType, value);
+            } else if (isArraySchema(child)) {
+                const value = data[child.propertyKey];
+                this.serializeArray(element, child, value);
             }
         }
     }
@@ -117,32 +146,61 @@ export class XMLDecoratorSerializer implements SerializerContext {
         } else if (type === Date) {
             return (value as Date).toISOString();
         } else {
-            throw new Error("Cannot convert value " + value);
+            throw new Error("Cannot convert value " + value + " of " + type);
         }
     }
 
-    private serializeElement(parentNode: Node, schema: PropertySchema, data: any) {
-        if (!this.document || schema.namespaceUri === null) {
+    private serializeElement(parentNode: Node, name: string, namespaceUri: string, elementType: Function, data: any) {
+
+        if (!this.document || !elementType) {
             throw new Error("Internal error.");
         }
 
-        if (schema.type === Number || schema.type === Boolean || schema.type === String || schema.type === Date) {
-            this.serializeValueElement(parentNode, schema, data);
-        } else if (typeof schema.type === "function") {
-            this.serializeObject(parentNode, schema.type, data, schema.name, schema.namespaceUri);
+        if (elementType === Number || elementType === Boolean || elementType === String || elementType === Date) {
+            this.serializeValueElement(parentNode, name, namespaceUri, elementType, data);
+        } else if (typeof elementType === "function") {
+            this.serializeObject(parentNode, elementType, data, name, namespaceUri);
         } else {
-            throw new Error("Cannot serialize type " + schema.type);
+            throw new Error("Cannot serialize type " + elementType);
         }
     }
     
-    private serializeValueElement(parentNode: Node, schema: PropertySchema, data: any) {
-        if (!this.document || schema.namespaceUri === null) {
+    private serializeValueElement(parentNode: Node, name: string, namespaceUri: string, elementType: Function, data: any) {
+        if (!this.document) {
             throw new Error("Internal error.");
         }
 
-        const element = this.document.createElementNS(schema.namespaceUri, this.getQualifiedName(schema.name, schema.namespaceUri));
-        element.appendChild(this.document.createTextNode(this.convertValue(data, schema.type)));
+        const element = this.document.createElementNS(namespaceUri, this.getQualifiedName(name, namespaceUri));
+        element.appendChild(this.document.createTextNode(this.convertValue(data, elementType)));
         parentNode.appendChild(element);
+    }
+
+    private getArrayItemType(itemTypes: ArrayItemOptions[], dataItem: any): ArrayItemOptions|null {
+        if (itemTypes.length === 0) {
+            throw new Error("@XMLArrayItem must be specified if @XMLArray is specified");
+        }
+
+        for (let schemaItemType of itemTypes) {
+            if (!schemaItemType.itemType) {
+                throw new Error("@XMLArrayItem itemType must be specified");
+            }
+
+            if (itemTypes.length === 1) {
+                return schemaItemType;
+            }
+
+            if (!schemaItemType.isType) {
+                // TODO: use dataItem.constructor if more than one itemType, otherwise, accept the one given!
+                throw new Error("@XMLArrayItem isType must be specified when a member is decorated with more than one @XMLArrayItem");
+                continue;
+            }
+
+            if (schemaItemType.isType(dataItem)) {
+                return schemaItemType;
+            }
+        }
+
+        return null;
     }
 
     private serializeArray(parentNode: Node, schema: ArraySchema, data: any[]) {
@@ -155,17 +213,22 @@ export class XMLDecoratorSerializer implements SerializerContext {
             parentNode.appendChild(nestedNode);
             parentNode = nestedNode;
         }
-
-        const itemName = getArrayItemName(schema);
-
-        const itemSchema: PropertySchema = {
-            ...schema,
-            type: schema.itemType(),
-            name: itemName,
-        };
         
         for (var i = 0; i < data.length; i++) {
-            this.serializeElement(parentNode, itemSchema, data[i]);
+            const dataItem = data[i];
+            const dataItemType: ArrayItemOptions|null = this.getArrayItemType(schema.itemTypes, dataItem);
+
+            if (!dataItemType) {
+                throw new Error("Cannot find type for array item index " + i);
+            }
+
+            if (!dataItemType.itemType) {
+                throw new Error("Cannot find itemType for array item index " + i);
+            }
+
+            const itemName = getArrayItemName(schema, dataItemType);
+
+            this.serializeElement(parentNode, dataItemType.name || itemName, dataItemType.namespaceUri || "", dataItemType.itemType(), data[i]);
         }
     }
 }

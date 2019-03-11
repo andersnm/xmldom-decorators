@@ -46,14 +46,14 @@ function QNameArrayWriter(value: QName[], ctx: SerializerContext): string {
 }
 
 export class Sequence {
-    @XMLArray({name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element}]})
     elements?: Element[];
     
     // Content: (annotation?, (element | group | choice | sequence | any)*)
 }
 
 export class Choice {
-    @XMLArray({name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element}]})
     elements?: Element[];
 
     // Content: (annotation?, (element | group | choice | sequence | any)*)
@@ -63,17 +63,17 @@ export class SimpleContentExtension {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     base?: QName;
 
-    @XMLArray({name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute}]})
     attributes?: Attribute[];
 
-    @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}]})
     attributeGroups?: AttributeGroup[];
 
     // (annotation?, ((attribute | attributeGroup)*, anyAttribute?), assert*)
 }
 
 export class SimpleContent {
-    @XMLElement({name: "extension", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "extension", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     extension?: SimpleContentExtension;
 
     // (annotation?, (restriction | extension))
@@ -83,16 +83,16 @@ export class ComplexContentExtension {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     base?: QName;
 
-    @XMLArray({name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute}]})
     attributes?: Attribute[];
 
-    @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}]})
     attributeGroups?: AttributeGroup[];
 
-    @XMLElement({name: "choice", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "choice", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     choice?: Choice;
 
-    @XMLElement({name: "sequence", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "sequence", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     sequence?: Sequence;
 
     // (annotation?, openContent?, ((group | all | choice | sequence)?, ((attribute | attributeGroup)*, anyAttribute?), assert*))
@@ -102,26 +102,26 @@ export class ComplexContentRestriction {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     base?: QName;
 
-    @XMLArray({name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute}]})
     attributes?: Attribute[];
 
-    @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}]})
     attributeGroups?: AttributeGroup[];
 
-    @XMLElement({name: "choice", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "choice", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     choice?: Choice;
 
-    @XMLElement({name: "sequence", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "sequence", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     sequence?: Sequence;
 
     // (annotation?, openContent?, (group | all | choice | sequence)?, ((attribute | attributeGroup)*, anyAttribute?), assert*)
 }
 
 export class ComplexContent {
-    @XMLElement({name: "extension", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "extension", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     extension?: ComplexContentExtension;
 
-    @XMLElement({name: "restriction", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "restriction", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     restriction?: ComplexContentRestriction;
 
     // (annotation?, (restriction | extension))
@@ -134,7 +134,7 @@ export class AttributeGroup {
     @XMLAttribute()
     ref?: string;
 
-    @XMLArray({name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute}]})
     attributes?: Attribute[];
 }
 
@@ -142,30 +142,30 @@ export class ComplexType {
     @XMLAttribute()
     name?: string;
 
-    @XMLElement({name: "sequence", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
-    sequence?: Sequence;
-
-    @XMLArray({name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute, nested: false})
-    attributes?: Attribute[];
-
-    @XMLElement({name: "choice", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "choice", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     choice?: Choice;
 
-    @XMLElement({name: "simpleContent", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types: [{name: "sequence", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
+    sequence?: Sequence;
+
+    @XMLArray({nested: false, itemTypes: [{name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute}]})
+    attributes?: Attribute[];
+
+    @XMLArray({nested: false, itemTypes: [{name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}]})
+    attributeGroups?: AttributeGroup[];
+
+    @XMLElement({types:[{name: "simpleContent", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     simpleContent?: SimpleContent;
 
-    @XMLElement({name: "complexContent", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types:[{name: "complexContent", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     complexContent?: ComplexContent;
-
-    @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
-    attributeGroup?: AttributeGroup[];
 }
 
 export class SimpleTypeRestriction {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     base?: QName;
 
-    @XMLArray({name: "enumeration", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Enumeration, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "enumeration", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Enumeration}]})
     enumeration?: Enumeration[];
 
     // (annotation?, (simpleType?, (minExclusive | minInclusive | maxExclusive | maxInclusive | totalDigits | fractionDigits | length | minLength | maxLength | enumeration | whiteSpace | pattern | assertion | explicitTimezone | {any with namespace: ##other})*))
@@ -175,7 +175,7 @@ export class SimpleTypeUnion {
     @XMLAttribute({factory: [QNameArrayReader, QNameArrayWriter]})
     memberTypes?: QName[];
 
-    @XMLArray({name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType, nested: false})
+    @XMLArray({nested: false, itemTypes: [{name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType}]})
     simpleType?: SimpleType[];
 
     // (annotation?, simpleType*)
@@ -185,10 +185,10 @@ export class SimpleType {
     @XMLAttribute()
     name?: string;
 
-    @XMLElement({name: "restriction", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types:[{name: "restriction", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     restriction?: SimpleTypeRestriction;
 
-    @XMLElement({name: "union", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types:[{name: "union", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     union?: SimpleTypeUnion;
 
     // (annotation?, (restriction | list | union))
@@ -209,7 +209,7 @@ export class Attribute {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     type?: QName;
 
-    @XMLElement({name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types:[{name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     simpleType?: SimpleType;
 }
 
@@ -223,8 +223,8 @@ export class Element {
     @XMLAttribute()
     targetNamespace?: string;
 
-    @XMLAttribute()
-    type?: string;
+    @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
+    type?: QName;
 
     @XMLAttribute()
     ref?: string;
@@ -238,10 +238,10 @@ export class Element {
     @XMLAttribute()
     nillable?: boolean;
 
-    @XMLElement({name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types:[{name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     complexType?: ComplexType;
 
-    @XMLElement({name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema"})
+    @XMLElement({types:[{name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     simpleType?: SimpleType;
 }
 
@@ -265,19 +265,24 @@ export class Schema {
     @XMLAttribute()
     attributeFormDefault?: string;
 
-    @XMLArray({name: "import", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import, nested: false})
+    @XMLArray({nested: false, itemTypes:[{name: "include", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import}]})
+    // @XMLArrayItem({name: "include", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import})
     imports?: Import[];
 
     // TODO: is the order of (Element|ComplexType|SimpleType) significant?
-    @XMLArray({name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element, nested: false})
+    // @XMLArray({name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element, nested: false})
+    @XMLArray({nested: false, itemTypes:[{name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element}]})
     elements?: Element[];
 
-    @XMLArray({name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => ComplexType, nested: false})
+    // @XMLArray({name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => ComplexType, nested: false})
+    @XMLArray({nested: false, itemTypes:[{name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => ComplexType}]})
     complexTypes?: ComplexType[];
 
-    @XMLArray({name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType, nested: false})
+    // @XMLArray({name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType, nested: false})
+    @XMLArray({nested: false, itemTypes:[{name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType}]})
     simpleTypes?: SimpleType[];
 
-    @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
+    // @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
+    @XMLArray({nested: false, itemTypes:[{name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}]})
     attributeGroup?: AttributeGroup[];
 }

@@ -6,6 +6,7 @@ type FactoryReader = (value: string, ctx: DeserializerContext) => any;
 type FactoryWriter = (value: any, ctx: SerializerContext) => string;
 type FactoryTuple = [FactoryReader, FactoryWriter];
 type TypeGetter = () => Function;
+type IsTypeGetter = (o: any) => boolean;
 
 export interface RootOptions {
     name?: string;
@@ -13,19 +14,31 @@ export interface RootOptions {
 }
 
 export interface ElementOptions {
-    name?: string;
-    namespaceUri?: string;
-    enum?: object|null;
+    types?: ArrayItemOptions[];
 }
 
 export interface ArrayOptions {
+    /**
+     * Container element name. Only used when nested is true.
+     */
     name?: string;
+
+    /**
+     * Container element namespace URI. Only used when nested is true.
+     */
     namespaceUri?: string;
 
     /**
-     * Only applicable to arrays wrapped in a container element. Defaults to itemType().name if null.
+     * Indicates whether the array is wrapped in a container XML element. 
      */
-    itemName?: string|null;
+    nested?: boolean;
+
+    itemTypes?: ArrayItemOptions[];
+}
+
+export interface ArrayItemOptions {
+    name?: string;
+    namespaceUri?: string;
 
     /**
      * A method which returns the array item type.
@@ -34,9 +47,9 @@ export interface ArrayOptions {
     itemType?: TypeGetter;
 
     /**
-     * Indicates whether the array is wrapped in a container XML element. 
+     * A method which returns whether the JavaScript object resolves to the item type.
      */
-    nested?: boolean;
+    isType?: IsTypeGetter;
 }
 
 export interface AttributeOptions {
@@ -44,63 +57,84 @@ export interface AttributeOptions {
     namespaceUri?: string;
     enum?: object|null;
     factory?: FactoryTuple;
+    type?: Function;
 }
 
 export interface TextOptions {
-    name?: string;
-    namespaceUri?: string;
 }
 
 export interface BaseSchema {
+    xmlType: "root" | "element" | "attribute" | "array" | "text";
+}
+
+export interface RootSchema extends BaseSchema {
+    xmlType: "root";
+
     /**
      * The unqualified XML node name. Must not specify a prefix.
      */
     name: string;
 
     /**
-     * The XML namespace URI for this node. Only attributes can have null namespaceUri.
-     * Default for elements: "". Empty string.
+     * The XML namespace URI for this node. Default for elements: "". Empty string.
+     */
+    namespaceUri: string|null;
+
+    type: any;
+}
+
+export interface ElementSchema extends BaseSchema {
+    xmlType: "element";
+    propertyKey: string;
+    types: ArrayItemOptions[];
+}
+
+export interface TextSchema extends BaseSchema {
+    xmlType: "text";
+    propertyKey: string;
+    type: Function;
+}
+
+export interface AttributeSchema extends BaseSchema {
+    xmlType: "attribute";
+    propertyKey: string;
+
+    /**
+     * The unqualified XML node name. Must not specify a prefix.
+     */
+    name: string;
+
+    /**
+     * The XML namespace URI for this node.
      * Default for attributes: null. Implies it belongs to the element.
      */
     namespaceUri: string|null;
 
-    xmlType: "root" | "element" | "attribute" | "array" | "text";
-    type: any;
+    factory?: FactoryTuple; // only used by attributes
+
+    type: Function;
 }
 
-export interface RootSchema extends BaseSchema {
-    xmlType: "root";
-}
-
-export interface ValueSchema extends BaseSchema {
-    xmlType: "element" | "attribute" | "array" | "text";
-    enum: object|null;
-}
-
-export interface PropertySchema extends ValueSchema {
-    xmlType: "element" | "attribute" | "array" | "text";
-    propertyKey: string;
-    factory?: FactoryTuple;
-}
-
-export interface ArraySchema extends PropertySchema {
+export interface ArraySchema extends BaseSchema {
     xmlType: "array";
+    propertyKey: string;
 
     /**
-     * Only applicable to arrays wrapped in a container element. Defaults to itemType().name if null.
+     * The unqualified XML node name. Must not specify a prefix.
      */
-    itemName: string|null;
+    name: string;
 
     /**
-     * A method which returns the array item type.
-     * (The item type cannot be derived from the decorator metadata. The item type is a callback to support cyclic references to types defined later in the file)
+     * The XML namespace URI for this node. Default for elements: "". Empty string.
      */
-    itemType: TypeGetter;
+    namespaceUri: string|null;
 
     /**
      * Indicates whether the array is wrapped in a container XML element. 
      */
     nested: boolean;
+
+    itemTypes: ArrayItemOptions[];
 }
 
 export function XMLRoot(opts: RootOptions = {}) {
@@ -125,43 +159,62 @@ export function XMLElement<T>(opts: ElementOptions = {}) {
     return function(target: T, propertyKey: string) {
         let type = Reflect.getMetadata("design:type", target, propertyKey);
         if (type === Array) {
-            throw new Error("Use @XMLArray with itemType on arrays");
+            throw new Error("Use @XMLArray on arrays");
         }
 
-        let targetChildren: PropertySchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+        let targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
         if (targetChildren.length === 0) {
             Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
         }
 
         targetChildren.push({
             propertyKey: propertyKey,
-            name: opts.name || propertyKey || "",
-            namespaceUri: opts.namespaceUri || "",
-            type: type,
             xmlType: "element",
-            enum: opts.enum || null,
-        });
+            enum: null, // opts.enum || null,
+            types: !!opts.types ? getItemTypes(opts.types) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
+        } as ElementSchema);
     }
 }
 
 export function XMLAttribute(opts: AttributeOptions = {}) {
     return function(target: any, propertyKey: string) {
         let type = Reflect.getMetadata("design:type", target, propertyKey);
-        let targetChildren: PropertySchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+        if ((!opts.type && !opts.factory) && type === Object) {
+            throw new Error("@XMLAttribute must specify type or factory on " + propertyKey + " in " + target.constructor.name);
+        }
+
+        let targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
         if (targetChildren.length === 0) {
             Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
         }
         
         targetChildren.push({
             propertyKey: propertyKey,
+            factory: opts.factory,
             name: opts.name || propertyKey || "",
             namespaceUri: opts.namespaceUri || null,
-            factory: opts.factory,
-            type: type,
+            type: opts.type || type,
             xmlType: "attribute",
             enum: opts.enum || null,
-        });
+        } as AttributeSchema);
     }
+}
+
+function getItemTypes(types: ArrayItemOptions[]): ArrayItemOptions[] {
+    // Throw if types have duplicate names; the name is the xml disambiguator
+    // TODO: check default names too (later)
+    for (let type of types) {
+        if (type.name && types.find(t => t !== type && t.name === type.name)) {
+            throw new Error("Cannot have duplicate item type name " + type.name);
+        }
+    }
+
+    return types.map(t => ({
+        name: t.name || null, // null means to calculate a default when needed
+        namespaceUri: t.namespaceUri || "",
+        isType: t.isType,
+        itemType: t.itemType,
+    } as ArrayItemOptions));
 }
 
 export function XMLArray(opts: ArrayOptions = {}) {
@@ -171,11 +224,7 @@ export function XMLArray(opts: ArrayOptions = {}) {
             throw new Error("@XMLArray can only be specified on arrays");
         }
 
-        if (opts.itemType === undefined) {
-            throw new Error("@XMLArray requires itemType");
-        }
-
-        const targetChildren: PropertySchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+        const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
         if (targetChildren.length === 0) {
             Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
         }
@@ -183,49 +232,54 @@ export function XMLArray(opts: ArrayOptions = {}) {
         const name = opts.name || propertyKey;
         const nested = opts.nested !== undefined ? opts.nested : true;
 
-        let itemName;
-        if (nested) {
-            itemName = opts.itemName || null; // default to itemType().name later if null
-        } else {
-            itemName = name;
-        }
-        
         const arraySchema: ArraySchema = {
             propertyKey: propertyKey,
             name: name,
             namespaceUri: opts.namespaceUri || "",
-            type: type,
             xmlType: "array",
-            enum: null,
-            itemName: itemName,
-            itemType: opts.itemType,
             nested: nested,
+            itemTypes: !!opts.itemTypes ? getItemTypes(opts.itemTypes) : [],
         };
 
         targetChildren.push(arraySchema);
     }
 }
 
+export function isArraySchema(schema: BaseSchema): schema is ArraySchema {
+    return schema.xmlType == "array";
+}
+
+export function isRootSchema(schema: BaseSchema): schema is RootSchema {
+    return schema.xmlType == "root";
+}
+
+export function isElementSchema(schema: BaseSchema): schema is ElementSchema {
+    return schema.xmlType == "element";
+}
+
+export function isAttributeSchema(schema: BaseSchema): schema is AttributeSchema {
+    return schema.xmlType == "attribute";
+}
+
+export function isTextSchema(schema: BaseSchema): schema is TextSchema {
+    return schema.xmlType == "text";
+}
+
 export function XMLText(opts: TextOptions = {}) {
     return function(target: any, propertyKey: string) {
         const type = Reflect.getMetadata("design:type", target, propertyKey);
 
-        const targetChildren: PropertySchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+        const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
         if (targetChildren.length === 0) {
             Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
         }
         
-        const name = opts.name || propertyKey;
-        
-        const arraySchema: PropertySchema = {
+        const textSchema: TextSchema = {
             propertyKey: propertyKey,
-            name: name,
-            namespaceUri: opts.namespaceUri || "",
             type: type,
             xmlType: "text",
-            enum: null,
         };
 
-        targetChildren.push(arraySchema);
+        targetChildren.push(textSchema);
     }
 }
