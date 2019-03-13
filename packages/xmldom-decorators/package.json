@@ -1,0 +1,31 @@
+{
+  "name": "xmldom-decorators",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "verbose": false,
+    "testEnvironment": "node",
+    "collectCoverage": true
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "@types/node": "^10.12.7",
+    "@types/xmldom": "^0.1.29",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.4",
+    "typescript": "^3.3.1"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.1.12",
+    "xmldom": "^0.1.27"
+  }
+}

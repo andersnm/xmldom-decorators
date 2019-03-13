@@ -1,7 +1,7 @@
-import { XMLRoot, XMLElement, XMLArray, XMLAttribute, XMLText } from '../decorators';
-import { ElementAttributes } from 'xmldom/sax';
-import { DeserializerContext } from '../deserializer';
-import { SerializerContext } from '../serializer';
+import { XMLRoot, XMLElement, XMLArray, XMLAttribute, XMLText } from 'xmldom-decorators/lib/decorators';
+// import { ElementAttributes } from 'xmldom/sax';
+import { DeserializerContext } from 'xmldom-decorators/lib/deserializer';
+import { SerializerContext } from 'xmldom-decorators/lib/serializer';
 
 export interface QName {
     localName: string;

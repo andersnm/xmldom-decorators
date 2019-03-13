@@ -1,0 +1,27 @@
+{
+  "name": "xmldom-decorators-cli",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "verbose": false,
+    "testEnvironment": "node",
+    "collectCoverage": true
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.4"
+  },
+  "dependencies": {
+    "xmldom-decorators": "^1.0.0"
+  }
+}

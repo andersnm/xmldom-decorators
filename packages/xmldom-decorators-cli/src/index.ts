@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import { XMLDecoratorDeserializer } from './deserializer';
-import { Element, Schema, ComplexType, QName, SimpleType, Attribute, ComplexContentExtension, Sequence, Choice, AttributeGroup } from './schema/XsdSchema';
+import { XMLDecoratorDeserializer } from 'xmldom-decorators/lib/deserializer';
+import { Element, Schema, ComplexType, QName, SimpleType, Attribute, ComplexContentExtension, Sequence, Choice, AttributeGroup } from './xsdschema';
 import { toposort } from './toposort';
 
 const EOL = "\r\n";
@@ -68,6 +68,7 @@ function scanClassesFromFile(fileName: string, classes: SchemaClass[]) {
     const deser = new XMLDecoratorDeserializer();
     const o = deser.deserialize<Schema>(contents, Schema);
 
+    console.log(JSON.stringify(o));
     scanClasses(o, classes);
 }
 
@@ -90,6 +91,7 @@ function scanClasses(schema: Schema, classes: SchemaClass[]) {
             if (!i.schemaLocation) {
                 throw new Error("Import must specify schemaLocation");
             }
+            console.log("importing ", i.schemaLocation);
             scanClassesFromFile(i.schemaLocation, classes);
         }
     }
@@ -163,6 +165,7 @@ function convertQNameType(type: QName, schema: Schema): string {
             case "boolean": return "boolean";
             case "decimal": return "number";
             case "int": return "number";
+            case "long": return "number";
             case "positiveInteger": return "number";
             case "nonNegativeInteger": return "number";
             case "date": return "Date";
@@ -242,8 +245,8 @@ function scanComplexTypeMembers(complexType: ComplexType, schema: Schema, cls: S
         scanAttributes(complexType.attributes, cls, schema);
     }
 
-    if (complexType.attributeGroup) {
-        scanAttributeGroups(complexType.attributeGroup, schema, cls, classes);
+    if (complexType.attributeGroups) {
+        scanAttributeGroups(complexType.attributeGroups, schema, cls, classes);
     }
 
     if (complexType.sequence) {
@@ -372,18 +375,19 @@ function scanElementClassMember(e: Element, cls: SchemaClass, schema: Schema, cl
         let st: SimpleType|undefined;
 
         if (schema.complexTypes) {
-            ct = schema.complexTypes.find(c => c.name === e.type);
+            ct = schema.complexTypes.find(c => e.type !== undefined && (c.name === e.type.localName));
         }
         
         if (schema.simpleTypes) {
-            st = schema.simpleTypes.find(c => c.name === e.type);
+            // TODO: e.type can be qname xs:long etc
+            st = schema.simpleTypes.find(c => e.type !== undefined && c.name === e.type.localName);
         }
 
         if (ct) {
             cls.members.push({
                 name: e.name || "",
                 namespaceUri: e.targetNamespace || schema.targetNamespace || "",
-                type: e.type,
+                type: e.type.localName,
                 xmlType: xmlType
             });
         } else if (st) {
