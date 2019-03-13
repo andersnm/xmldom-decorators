@@ -13,7 +13,7 @@ export class MyXmlType {
 	@XMLElement()
 	b: string = "";
 
-	@XMLArray({itemName: "v", itemType: () => Number})
+	@XMLArray({itemTypes: [{itemName: "v", itemType: () => Number}]})
 	n: number[] = [];
 }
 ```
@@ -34,14 +34,14 @@ const xml = serializer.serialize(data, MyXmlType);
 ### Deserialize XML to JavaScript objects:
 
 ```typescript
-var xml = `<MyXml a="1">
+var xml = `<MyXmlType a="1">
 	<b>c</b>
 	<n>
 		<v>1</v>
 		<v>2</v>
 		<v>3</v>
 	</n>
-</MyXml>`;
+</MyXmlType>`;
 
 const deserializer = new XMLDecoratorDeserializer();
 const data = deserializer.deserialize(xml, MyXmlType);
@@ -62,6 +62,7 @@ Deserializes an XML string into a JavaScript object. The type parameter must be 
 
 Serializes a JavaScript object into an XML string.
 
+- `data` - The JavaScript object to serialize.
 - `type` - Must be a class with the `@XMLRoot` decorator.
 - `defaultNSPrefixMap` - Optional dictionary with namespace URI as the key and prefix as the value. Overrides the default namespace prefixes (p0, p1...). All prefixes must be unique. The prefix can be an empty string for no prefix.
 
@@ -71,22 +72,34 @@ Serializes a JavaScript object into an XML string.
 
 Applied to classes which define a root XML document element.
 
-#### `@XMLElement({name?, namespaceUri?})`
+#### `@XMLElement({types: [{name?, namespaceUri?, itemType?, isType?}]})`
 
 Applied to class members which define an XML element. Must have a value type or class type. Throws a runtime error if applied to an array type.
 
-#### `@XMLAttribute({name?, namespaceUri?})`
+- `types: []` - Array of possible element types for this field. Default: one element with property name and decorated type.
+- `types[].name: string` - XML element name. Required if more than one type.
+- `types[].itemType: () => Function` - Callback returning the type of the element. Required if more than one type.
+- `types[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required if more than one type.
+
+#### `@XMLAttribute({name?, namespaceUri?, factory?, type?})`
 
 Applied to class members which define an attribute on an XML element. Must have value type. Throws a runtime error if applied to a class or an array type.
 
-#### `@XMLArray({name?, namespaceUri?, itemName?, itemType, nested?})`
+- `name: string` - The name of the attribute. Default: the name of the property the decorator was applied to
+- `factory: Tuple` - Optional. Callbacks to convert an XML attribute value to and from a JavaScript object
+- `type: Function` - Optional. The type of the attribute if it can't be derived from emitted decorator metadata
+
+
+#### `@XMLArray({name?, namespaceUri?, nested?, itemTypes: [{name?, namespaceUri?, itemType?, isType?}]})`
 
 Applied to class members which define an array of XML elements, with or without a container XML element. Throws a runtime error if applied to a type which is not an array type.
 
 - `name: string` - The name of the array element(s). Default: the name of the property the decorator was applied to
-- `itemName: string` - The name of array item elements inside the container element, if there is one. Default: the name of the item type
-- `itemType: () => Function` - Callback returning the type of array items. Required
 - `nested: boolean` - Specifies if there is a container element for the array items. Default: true
+- `itemTypes: []` - Array of possible element types in the array. Required
+- `itemTypes[].name: string` - The element name of an array item inside the container element, if there is one. Default: the name of the item type
+- `itemTypes[].itemType: () => Function` - Callback returning the type of an array items. Required
+- `itemTypes[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required
 	
 #### `@XMLText()`
 
@@ -110,7 +123,7 @@ class Test {
 	// The XML array itemType must be a callback which returns the array item type
 	// Decorator metadata cannot directly reference types declared later in the file.
 	// Decorator metadata does not have information about array item types.
-	@XMLArray({itemType: () => Number})
+	@XMLArray({itemTypes: [{itemType: () => Number}]})
 	intArray: Number[] = [];
 
 	// Optional attributes must be set explicitly (NOTE: not implemented yet)
@@ -126,7 +139,7 @@ class Test {
 	// forward?: ForwardClass;
 
 	// Workaround with array still allows to (de)serialize the XML:
-	@XMLArray({itemType: () => ForwardClass, nested: false})
+	@XMLArray({itemTypes: [{itemType: () => ForwardClass, nested: false}]})
 	forward?: ForwardClass[];
 }
 
@@ -134,6 +147,57 @@ class ForwardClass {
 }
 
 ```
+
+## More examples
+
+### Parsing XML with different root elements
+
+F.ex an API can return XML for either a message type, or an error type:
+
+```xml
+<!-- XML returned on success: -->
+<message>...</message>
+
+<!-- XML returned on error: -->
+<error>...</error>
+```
+To handle this, either
+
+1. Specify multiple @XMLRoot decorators and design the class to contain all fields
+2. Specify separate @XMLRoot classes, and pass an array of possible types to the deserializer
+
+### Parsing XML with attributes and text content
+
+Given an XML like this:
+
+```xml
+<element attr="value">Hello world</element>
+```
+
+### Parsing XML with qualified names in attribute values
+
+Given an XML like this:
+
+```xml
+<ns:element attr="ns:value" xmlns:ns="uri" />
+```
+
+### Parsing XML with significant order of child elements
+
+Given an XML like this:
+
+```xml
+<schema>
+	<element />
+	<element />
+	<complexType />
+	<complexType />
+	<simpleType />
+	<simpleType />
+</schema>
+```
+
+
 
 ## TODO
 
