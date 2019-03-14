@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as fs from 'fs';
-import { XMLDecoratorDeserializer } from 'xmldom-decorators/lib/deserializer';
+import { XMLDecoratorDeserializer } from 'xmldom-decorators';
 import { Element, Schema, ComplexType, QName, SimpleType, Attribute, ComplexContentExtension, Sequence, Choice, AttributeGroup } from './xsdschema';
 import { toposort } from './toposort';
 

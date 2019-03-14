@@ -10,7 +10,7 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
-      "xmldom-decorators/*": ["../xmldom-decorators/*"]
+      "xmldom-decorators": ["../xmldom-decorators"]
     }
   },
   "include": ["src"],
