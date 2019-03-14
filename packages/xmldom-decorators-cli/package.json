@@ -1,7 +1,7 @@
 {
   "name": "xmldom-decorators-cli",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Command line tool to convert XSD to TypeScript classes using xmldom-decorators",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

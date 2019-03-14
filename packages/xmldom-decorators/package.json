@@ -1,6 +1,6 @@
 {
   "name": "xmldom-decorators",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript decorators and (de-)serializer for xmldom",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
