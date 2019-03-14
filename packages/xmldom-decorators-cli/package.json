@@ -4,6 +4,12 @@
   "description": "> TODO: description",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "bin": {
+    "xmldom-decorators-cli": "lib/index.js"
+  },
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest"
@@ -18,10 +24,12 @@
   "license": "ISC",
   "devDependencies": {
     "@types/jest": "^23.3.9",
+    "@types/node": "^10.12.7",
     "jest": "^23.6.0",
-    "ts-jest": "^23.10.4"
+    "ts-jest": "^23.10.4",
+    "typescript": "^3.3.1"
   },
   "dependencies": {
-    "xmldom-decorators": "^1.0.0"
+    "xmldom-decorators": "file:../xmldom-decorators"
   }
 }
