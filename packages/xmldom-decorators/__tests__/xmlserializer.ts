@@ -63,6 +63,18 @@ class FallbackTypeInRoot {
 }
 
 @XMLRoot()
+class OptionalTypeInRoot {
+	@XMLElement()
+	value1?: string;
+
+	@XMLElement()
+	value2?: string;
+
+	@XMLArray({ itemTypes: [{ name: "value3", itemType: () => String}] })
+	value3?: string[];
+}
+
+@XMLRoot()
 class ComplexNestedArrayInRoot {
 	@XMLArray({ itemTypes: [{ name: "DateInRoot", itemType: () => DateInRoot}] })
 	dates: DateInRoot[] = [];
@@ -252,6 +264,15 @@ describe("Decorators", () => {
 		expect(result).toBe("<FallbackTypeInRoot><Name>test</Name></FallbackTypeInRoot>");
 
 		const x: any = deserialize(result, FallbackTypeInRoot);
+		expect(x).toEqual(o);
+	});
+
+	test("Optional type in root", () => {
+		const o: OptionalTypeInRoot  = { value2: "test" };
+		const result = serialize(o, OptionalTypeInRoot);
+		expect(result).toBe("<OptionalTypeInRoot><value2>test</value2></OptionalTypeInRoot>");
+
+		const x: any = deserialize(result, OptionalTypeInRoot);
 		expect(x).toEqual(o);
 	});
 

@@ -110,14 +110,13 @@ export class XMLDecoratorSerializer implements SerializerContext {
         }
 
         for (let child of children) {
-            /*
-            TODO const value = data[child.propertyKey];
-            if (value === undefined) {
-                continue;
-            }*/
-
             if (isElementSchema(child)) {
                 const value = data[child.propertyKey];
+                if (value === undefined) {
+                    // TODO: Throw if not optional
+                    continue;
+                }
+
                 const elementItemType = this.getArrayItemType(child.types, value);
                 if (!elementItemType || !elementItemType.itemType) {
                     throw new Error("Internal error " + JSON.stringify(child));
@@ -127,6 +126,11 @@ export class XMLDecoratorSerializer implements SerializerContext {
                 this.serializeElement(element, elementItemType.name || elementType.name, elementItemType.namespaceUri || "", elementType, value);
             } else if (isArraySchema(child)) {
                 const value = data[child.propertyKey];
+                if (value === undefined) {
+                    // TODO: Throw if not optional
+                    continue;
+                }
+
                 this.serializeArray(element, child, value);
             }
         }

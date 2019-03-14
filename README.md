@@ -1,10 +1,10 @@
 # xmldom-decorators - TypeScript decorators and (de-)serializer for xmldom
 
-See projects/xmldom-decorators
+See [packages/xmldom-decorators](packages/xmldom-decorators)
 
 # xmldom-decorators-cli - XSD to TypeScript classes with decorators
 
-See projects/xmldom-decorators-cli
+See [packages/xmldom-decorators-cli](packages/xmldom-decorators-cli)
 
 # Notes to self
 
