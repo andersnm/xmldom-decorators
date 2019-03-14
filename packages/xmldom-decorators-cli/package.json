@@ -3,6 +3,13 @@
   "private": true,
   "version": "1.0.1",
   "description": "Command line tool to convert XSD to TypeScript classes using xmldom-decorators",
+  "author": "andersnm",
+  "license": "MIT",
+  "homepage": "https://github.com/andersnm/xmldom-decorators",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andersnm/xmldom-decorators.git"
+  },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "bin": {
@@ -21,8 +28,6 @@
     "testEnvironment": "node",
     "collectCoverage": true
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@types/jest": "^23.3.9",
     "@types/node": "^10.12.7",

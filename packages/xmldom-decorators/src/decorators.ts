@@ -171,7 +171,7 @@ export function XMLElement<T>(opts: ElementOptions = {}) {
             propertyKey: propertyKey,
             xmlType: "element",
             enum: null, // opts.enum || null,
-            types: !!opts.types ? getItemTypes(opts.types) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
+            types: !!opts.types ? getItemTypes(opts.types, type) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
         } as ElementSchema);
     }
 }
@@ -200,7 +200,7 @@ export function XMLAttribute(opts: AttributeOptions = {}) {
     }
 }
 
-function getItemTypes(types: ArrayItemOptions[]): ArrayItemOptions[] {
+function getItemTypes(types: ArrayItemOptions[], fallbackType: Function): ArrayItemOptions[] {
     // Throw if types have duplicate names; the name is the xml disambiguator
     // TODO: check default names too (later)
     for (let type of types) {
@@ -209,11 +209,12 @@ function getItemTypes(types: ArrayItemOptions[]): ArrayItemOptions[] {
         }
     }
 
+    // If there is a single type without itemType, use the default fallback type from decorator metadata
     return types.map(t => ({
         name: t.name || null, // null means to calculate a default when needed
         namespaceUri: t.namespaceUri || "",
         isType: t.isType,
-        itemType: t.itemType,
+        itemType: t.itemType || (types.length === 1 ? () => fallbackType : undefined),
     } as ArrayItemOptions));
 }
 
@@ -238,7 +239,7 @@ export function XMLArray(opts: ArrayOptions = {}) {
             namespaceUri: opts.namespaceUri || "",
             xmlType: "array",
             nested: nested,
-            itemTypes: !!opts.itemTypes ? getItemTypes(opts.itemTypes) : [],
+            itemTypes: !!opts.itemTypes ? getItemTypes(opts.itemTypes, type) : [],
         };
 
         targetChildren.push(arraySchema);

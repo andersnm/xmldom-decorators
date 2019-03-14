@@ -2,6 +2,13 @@
   "name": "xmldom-decorators",
   "version": "1.0.1",
   "description": "TypeScript decorators and (de-)serializer for xmldom",
+  "author": "andersnm",
+  "license": "MIT",
+  "homepage": "https://github.com/andersnm/xmldom-decorators",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andersnm/xmldom-decorators.git"
+  },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
@@ -17,8 +24,6 @@
     "testEnvironment": "node",
     "collectCoverage": true
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@types/jest": "^23.3.9",
     "@types/node": "^10.12.7",

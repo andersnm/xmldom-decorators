@@ -57,6 +57,12 @@ class NestedArrayInRoot {
 }
 
 @XMLRoot()
+class FallbackTypeInRoot {
+	@XMLElement({ types: [{name: "Name"}] })
+	name: string = "";
+}
+
+@XMLRoot()
 class ComplexNestedArrayInRoot {
 	@XMLArray({ itemTypes: [{ name: "DateInRoot", itemType: () => DateInRoot}] })
 	dates: DateInRoot[] = [];
@@ -238,6 +244,15 @@ describe("Decorators", () => {
 
 		const x2: any = deserialize("<NestedArrayInRoot><names><String>Hello</String><String>World</String><NotAString>1</NotAString></names></NestedArrayInRoot>", NestedArrayInRoot);
 		expect(x2).toEqual(o);
+	});
+
+	test("Fallback type in root", () => {
+		const o: FallbackTypeInRoot  = { name: "test" };
+		const result = serialize(o, FallbackTypeInRoot);
+		expect(result).toBe("<FallbackTypeInRoot><Name>test</Name></FallbackTypeInRoot>");
+
+		const x: any = deserialize(result, FallbackTypeInRoot);
+		expect(x).toEqual(o);
 	});
 
 	test("Empty nested array in root", () => {
