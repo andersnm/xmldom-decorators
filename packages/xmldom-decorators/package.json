@@ -1,6 +1,6 @@
 {
   "name": "xmldom-decorators",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "TypeScript decorators and (de-)serializer for xmldom",
   "author": "andersnm",
   "license": "MIT",
