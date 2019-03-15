@@ -9,7 +9,14 @@ type TypeGetter = () => Function;
 type IsTypeGetter = (o: any) => boolean;
 
 export interface RootOptions {
+    /**
+     * Unqualified root element name.
+     */
     name?: string;
+
+    /**
+     * Root element namespace URI.
+     */
     namespaceUri?: string;
 }
 
@@ -19,7 +26,7 @@ export interface ElementOptions {
 
 export interface ArrayOptions {
     /**
-     * Container element name. Only used when nested is true.
+     * Unqualified container element name. Only used when nested is true.
      */
     name?: string;
 
@@ -33,11 +40,21 @@ export interface ArrayOptions {
      */
     nested?: boolean;
 
+    /**
+     * Array of possible element types this array can contain.
+     */
     itemTypes?: ArrayItemOptions[];
 }
 
 export interface ArrayItemOptions {
+    /**
+     * Unqualified element name.
+     */
     name?: string;
+
+    /**
+     * Element namespace URI.
+     */
     namespaceUri?: string;
 
     /**
@@ -53,10 +70,24 @@ export interface ArrayItemOptions {
 }
 
 export interface AttributeOptions {
+    /**
+     * Unqualified attribute name.
+     */
     name?: string;
+
+    /**
+     * Attribute namespace URI.
+     */
     namespaceUri?: string;
-    enum?: object|null;
+
+    /**
+     * Optional factory tuple to deserialize and serialize the attribute value.
+     */
     factory?: FactoryTuple;
+
+    /**
+     * Optional attribute type.
+     */
     type?: Function;
 }
 
@@ -159,7 +190,7 @@ export function XMLElement<T>(opts: ElementOptions = {}) {
     return function(target: T, propertyKey: string) {
         let type = Reflect.getMetadata("design:type", target, propertyKey);
         if (type === Array) {
-            throw new Error("Use @XMLArray on arrays");
+            throw new Error("@XMLElement decorator does not support array types on " + propertyKey + " in " + target.constructor.name);
         }
 
         let targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
@@ -170,7 +201,6 @@ export function XMLElement<T>(opts: ElementOptions = {}) {
         targetChildren.push({
             propertyKey: propertyKey,
             xmlType: "element",
-            enum: null, // opts.enum || null,
             types: !!opts.types ? getItemTypes(opts.types, type) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
         } as ElementSchema);
     }
@@ -195,7 +225,6 @@ export function XMLAttribute(opts: AttributeOptions = {}) {
             namespaceUri: opts.namespaceUri || null,
             type: opts.type || type,
             xmlType: "attribute",
-            enum: opts.enum || null,
         } as AttributeSchema);
     }
 }
@@ -222,7 +251,7 @@ export function XMLArray(opts: ArrayOptions = {}) {
     return function(target: any, propertyKey: string) {
         const type = Reflect.getMetadata("design:type", target, propertyKey);
         if (type !== Array) {
-            throw new Error("@XMLArray can only be specified on arrays");
+            throw new Error("@XMLArray requires an array type on " + propertyKey + " in " + target.constructor.name);
         }
 
         const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];

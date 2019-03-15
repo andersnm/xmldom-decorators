@@ -1,5 +1,23 @@
 # xmldom-decorators - TypeScript decorators and (de-)serializer for xmldom
 
+## Install
+
+```
+npm install xmldom-decorators
+```
+
+Enable emitting decorator metadata in tsconfig.json:
+
+```
+{
+  "compilerOptions": {
+    ....
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
 ## Example
 
 Given a TypeScript class defining the XML schema:
@@ -52,9 +70,12 @@ const data = deserializer.deserialize(xml, MyXmlType);
 
 ### XMLDecoratorDeserializer
 
-#### `deserialize(data: string, type: Function): any`
+#### `deserialize(data: string, type: Function|Function[]): any`
 
-Deserializes an XML string into a JavaScript object. The type parameter must be a class with the `@XMLRoot` decorator.
+Deserializes an XML string into a JavaScript object.
+
+- `data` - XML string to deserialize.
+- `type` - Must be a class or an array of classes with the `@XMLRoot` decorator.
 
 ### XMLDecoratorSerializer
 
@@ -72,12 +93,14 @@ Serializes a JavaScript object into an XML string.
 
 Applied to classes which define a root XML document element.
 
+- `name: string` - The unqualified name of the root element. Default: the name of the type the decorator was applied to.
+
 #### `@XMLElement({types: [{name?, namespaceUri?, itemType?, isType?}]})`
 
 Applied to class members which define an XML element. Must have a value type or class type. Throws a runtime error if applied to an array type.
 
 - `types: []` - Array of possible element types for this field. Default: one element with property name and decorated type.
-- `types[].name: string` - XML element name. Required if more than one type.
+- `types[].name: string` - The unqualified name of the element. Required if more than one type.
 - `types[].itemType: () => Function` - Callback returning the type of the element. Required if more than one type.
 - `types[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required if more than one type.
 
@@ -85,21 +108,20 @@ Applied to class members which define an XML element. Must have a value type or 
 
 Applied to class members which define an attribute on an XML element. Must have value type. Throws a runtime error if applied to a class or an array type.
 
-- `name: string` - The name of the attribute. Default: the name of the property the decorator was applied to
-- `factory: Tuple` - Optional. Callbacks to convert an XML attribute value to and from a JavaScript object
-- `type: Function` - Optional. The type of the attribute if it can't be derived from emitted decorator metadata
-
+- `name: string` - The unqualified name of the attribute. Default: the name of the property the decorator was applied to.
+- `factory: Tuple` - Optional. Callbacks to convert an XML attribute value to and from a JavaScript object.
+- `type: Function` - Optional. The type of the attribute if it can't be derived from emitted decorator metadata.
 
 #### `@XMLArray({name?, namespaceUri?, nested?, itemTypes: [{name?, namespaceUri?, itemType?, isType?}]})`
 
 Applied to class members which define an array of XML elements, with or without a container XML element. Throws a runtime error if applied to a type which is not an array type.
 
-- `name: string` - The name of the array element(s). Default: the name of the property the decorator was applied to
-- `nested: boolean` - Specifies if there is a container element for the array items. Default: true
-- `itemTypes: []` - Array of possible element types in the array. Required
-- `itemTypes[].name: string` - The element name of an array item inside the container element, if there is one. Default: the name of the item type
-- `itemTypes[].itemType: () => Function` - Callback returning the type of an array items. Required
-- `itemTypes[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required
+- `name: string` - The unqualified name of the array container element. Default: the name of the property the decorator was applied to.
+- `nested: boolean` - Specifies if there is a container element for the array items. Default: true.
+- `itemTypes: []` - Array of possible element types in the array. Required.
+- `itemTypes[].name: string` - The unqualified element name an array item. Default: the name of the item type.
+- `itemTypes[].itemType: () => Function` - Callback returning the type of an array items. Required.
+- `itemTypes[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required.
 	
 #### `@XMLText()`
 
@@ -202,12 +224,10 @@ Given an XML like this:
 ## TODO
 
 - Allow to specify xs:integer, decimal, float on number types
-- Separate schemas and decorator options
 - Object construction strategy
 - Validate required elements/attributes
 - Scheme for inheriting namespaces instead of specifying namespace everywhere
 - Replace the XML parser
-- Base classes / inheritance
 - xsd<->ts codegen tool
 - More control over dates
 - Recommendations for defaults

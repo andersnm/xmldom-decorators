@@ -5,11 +5,8 @@ export function getArrayItemName(schema: ArraySchema, opts: ArrayItemOptions): s
     if (!schema.nested && !opts.name) {
         return schema.name;
     }
-    // if (schema.nested) {
-        return opts.name || (opts.itemType && opts.itemType().name) || "";
-    // }
 
-    // return schema.name;
+    return opts.name || (opts.itemType && opts.itemType().name) || "";
 }
 
 function getArrayItemType(arraySchema: ArraySchema, localName: string, ns: string): ArrayItemOptions|null {
@@ -283,14 +280,13 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     private startRoot(ns: string, localName: string, tagName: string, el: ElementAttributes): void {
-        // TODO: scan multiple roots
+        // scan multiple roots
         let rootSchema: RootSchema|null = null;
 
         let rootNames: string[] = [];
         for (let schema of this.xmlRootSchemas) {
             rootNames.push(schema.name);
             if (localName === schema.name && (ns ? ns : "") == schema.namespaceUri) {
-                // console.log("FOUND ROOT", schema)
                 rootSchema = schema;
                 break;
             }
@@ -381,7 +377,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                 elementSchema: elementSchema,
                 contextType: "element",
                 type: type,
-                propertyKey: /*schema.*/propertyKey,
+                propertyKey: propertyKey,
             });
         } else if (Array.isArray(type)) {
             throw new Error("Internal error: Shouldnt be array here");
@@ -424,14 +420,14 @@ export class XMLDecoratorDeserializer {
     
     deserialize<T>(source: string, type: Function|Function[]): T {
 
-        // TODO: array of types; instead of array of roots on one type
+        // array of types; and array of roots per type
         let rootSchemas: RootSchema[]
         if (Array.isArray(type)) {
             rootSchemas = [];
             for (let typeType of type) {
                 var typeRootSchemas: RootSchema[] = Reflect.getMetadata("xml:root", typeType);
                 if (!typeRootSchemas) {
-                    throw new Error("Every root type must specify @xmlRoot decorator");
+                    throw new Error("Every root type must specify @XMLRoot decorator");
                 }
 
                 rootSchemas.push(...typeRootSchemas);
@@ -439,7 +435,7 @@ export class XMLDecoratorDeserializer {
         } else {
             rootSchemas = Reflect.getMetadata("xml:root", type);
             if (!rootSchemas) {
-                throw new Error("Root type must specify @xmlRoot decorator");
+                throw new Error("Root type must specify @XMLRoot decorator");
             }
         }
 
