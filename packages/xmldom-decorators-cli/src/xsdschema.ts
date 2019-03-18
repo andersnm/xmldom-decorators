@@ -209,6 +209,12 @@ export class Attribute {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     type?: QName;
 
+    @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
+    ref?: QName;
+
+    @XMLAttribute()
+    use?: string;
+
     @XMLElement({types:[{name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema"}]})
     simpleType?: SimpleType;
 }
@@ -226,8 +232,8 @@ export class Element {
     @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
     type?: QName;
 
-    @XMLAttribute()
-    ref?: string;
+    @XMLAttribute({ factory: [ QNameReader, QNameWriter ]})
+    ref?: QName;
 
     @XMLAttribute()
     minOccurs?: number;
@@ -265,24 +271,38 @@ export class Schema {
     @XMLAttribute()
     attributeFormDefault?: string;
 
-    @XMLArray({nested: false, itemTypes:[{name: "include", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import}]})
-    // @XMLArrayItem({name: "include", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import})
-    imports?: Import[];
+    @XMLArray({nested: false, itemTypes:[
+        {name: "include", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import},
+        {name: "import", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Import},
+        {name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element},
+        {name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => ComplexType},
+        {name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType},
+        {name: "attribute", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Attribute},
+        {name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}
+    ]})
+    items: (Import|Element|ComplexType|SimpleType|Attribute|AttributeGroup)[] = [];
 
-    // TODO: is the order of (Element|ComplexType|SimpleType) significant?
-    // @XMLArray({name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element, nested: false})
-    @XMLArray({nested: false, itemTypes:[{name: "element", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => Element}]})
-    elements?: Element[];
+    get imports(): Import[] {
+        return this.items.filter((i): i is Import => i instanceof Import);
+    }
 
-    // @XMLArray({name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => ComplexType, nested: false})
-    @XMLArray({nested: false, itemTypes:[{name: "complexType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => ComplexType}]})
-    complexTypes?: ComplexType[];
+    get elements(): Element[] {
+        return this.items.filter((i): i is Element => i instanceof Element);
+    }
 
-    // @XMLArray({name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType, nested: false})
-    @XMLArray({nested: false, itemTypes:[{name: "simpleType", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => SimpleType}]})
-    simpleTypes?: SimpleType[];
+    get complexTypes(): ComplexType[] {
+        return this.items.filter((i): i is ComplexType => i instanceof ComplexType);
+    }
 
-    // @XMLArray({name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup, nested: false})
-    @XMLArray({nested: false, itemTypes:[{name: "attributeGroup", namespaceUri: "http://www.w3.org/2001/XMLSchema", itemType: () => AttributeGroup}]})
-    attributeGroup?: AttributeGroup[];
+    get simpleTypes(): SimpleType[] {
+        return this.items.filter((i): i is SimpleType => i instanceof SimpleType);
+    }
+
+    get attributeGroups(): AttributeGroup[] {
+        return this.items.filter((i): i is AttributeGroup => i instanceof AttributeGroup);
+    }
+
+    get attributes(): Attribute[] {
+        return this.items.filter((i): i is Attribute => i instanceof Attribute);
+    }
 }

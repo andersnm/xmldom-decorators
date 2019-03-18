@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./lib",
+    "strict": true,
+    "inlineSourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./",
+    "paths": {
+      "xmldom-decorators": ["../xmldom-decorators"],
+      "xmldom-decorators-cli": ["../xmldom-decorators-cli"],
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "**/__tests__/*", "lib"]
+}

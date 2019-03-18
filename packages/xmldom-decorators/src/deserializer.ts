@@ -57,6 +57,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
     constructor(xmlRootSchemas: RootSchema[]) {
         this.xmlRootSchemas = xmlRootSchemas;
+        this.startPrefixMapping("xml", "http://www.w3.org/XML/1998/namespace");
     }
 
     startDocument(): void {
@@ -115,7 +116,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
             if (!childSchema) {
                 // TODO: fail if complex content in a simple type
-                console.log(localName, ns, "skipping")
+                // console.log(localName, ns, "skipping")
                 this.pushIgnore();
                 return;
             }

@@ -14,9 +14,10 @@ Working on the source code:
 git clone REPO-URL
 cd xmldom-decorators
 npm install
-./node_modules/.bin/lerna bootstrap
+./node_modules/.bin/lerna exec -- npm install
 ./node_modules/.bin/lerna run build
 ./node_modules/.bin/lerna run test
+node ./packages/sample-clients location
 ```
 
 Testing the cli:

@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="weatherdata">
+            <xs:complexType>
+		<xs:annotation>
+		    <xs:documentation>Schema to be used for
+			presenting weather parameters for specific locations.
+	            </xs:documentation>
+		</xs:annotation>
+
+		<xs:sequence>
+		    <xs:element name="meta" type="metaType" minOccurs="0" />
+		    <xs:element name="product" type="productType" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="created" type="xs:dateTime" use="required"/>
+	     </xs:complexType>
+	</xs:element>
+
+	<xs:complexType name="metaType">
+		<xs:annotation>
+		     <xs:documentation>Element for naming the
+		    forecast models used, and the respective time
+		    intervals for each of them.
+		     </xs:documentation>
+		</xs:annotation>
+
+		<xs:sequence>
+		    <xs:element name="model" type="modelType"
+		    minOccurs="1" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="licenseurl" type="xs:anyURI" use="optional"/>
+	 </xs:complexType>
+
+
+        <xs:complexType name="modelType">
+	    <xs:attribute name="name" type="xs:string" />
+	    <xs:attribute name="termin" type="xs:string" />
+	    <xs:attribute name="runended" type="xs:string" />
+	    <xs:attribute name="nextrun" type="xs:string" />
+	    <xs:attribute name="from" type="xs:string" />
+	    <xs:attribute name="to" type="xs:string" />
+	</xs:complexType>
+
+	<xs:complexType name="productType">
+	    <xs:annotation>
+	        <xs:documentation>Element describing a weatherproduct by
+	             time-elements, location-elements and a set of weather-elements.
+	        </xs:documentation>
+            </xs:annotation>
+
+	    <xs:sequence>
+	        <xs:element name="time" type="timeType"
+		maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="class" use="required">
+	        <xs:simpleType>
+		    <xs:restriction base="xs:string">
+		        <xs:enumeration value="pointData" />
+			<xs:enumeration value="extremes" />
+			<xs:enumeration value="forestfireindex" />
+			<xs:enumeration value="uvforecast" />
+			<xs:enumeration value="tidalwater" />
+			<xs:enumeration value="buoy" />
+			<xs:enumeration value="stavernodden" />
+			<xs:enumeration value="seaapproachforecast" />
+			<xs:enumeration value="temperatureverification" />
+		    </xs:restriction>
+		</xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+
+	<xs:complexType name="timeType">
+	    <xs:annotation>
+		<xs:documentation>Element containing forecasts
+		for the specified time and duration.
+		</xs:documentation>
+	    </xs:annotation>
+
+	    <xs:sequence>
+		<xs:element name="location" type="locationType"
+		maxOccurs="unbounded" />
+	    </xs:sequence>
+
+	    <xs:attribute name="from" type="xs:dateTime" use="required"/>
+	    <xs:attribute name="to" type="xs:dateTime" use="required" />
+	    <xs:attribute name="datatype" use="optional">
+		<xs:simpleType>
+		    <xs:restriction base="xs:string">
+			<xs:enumeration value="observation" />
+			<xs:enumeration value="forecast" />
+		    </xs:restriction>
+	        </xs:simpleType>
+            </xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="temperature">
+		    <xs:attribute name="unit" type="xs:string" use="required"/>
+		    <xs:attribute name="value" type="xs:decimal" use="required"/>
+		    <xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="cloudiness">
+	            <xs:annotation>
+			<xs:documentation>Element denoting the cloudiness in percent or eights.
+			</xs:documentation>
+		    </xs:annotation>
+		    <xs:attribute name="eights" use="optional">
+		        <xs:simpleType>
+			    <xs:restriction base="xs:integer">
+			        <xs:minInclusive value="0"/>
+			        <xs:maxInclusive value="8"/>
+			    </xs:restriction>
+		        </xs:simpleType>
+		    </xs:attribute>
+		    <xs:attribute name="percent" type="xs:string" use="optional"/>
+		    <xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+
+	<xs:complexType name="windspeed">
+		<xs:annotation>
+		<xs:documentation>Element denoting the wind speed by name, at 10 m above ground,
+          in meters per second or the Beaufort scale.
+		</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="mps" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="name" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:string"/>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="beaufort" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:integer">
+					<xs:minInclusive value="0"/>
+					<xs:maxInclusive value="12"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="precipitation">
+	    <xs:annotation>
+	        <xs:documentation>Element denoting the precipitation in mm.
+		</xs:documentation>
+	    </xs:annotation>
+            <xs:attribute name="unit" type="xs:string" use="required"/>
+	    <xs:attribute name="value" use="required">
+	         <xs:simpleType>
+	             <xs:restriction base="xs:decimal">
+		          <xs:minInclusive value="0"/>
+		     </xs:restriction>
+		 </xs:simpleType>
+	    </xs:attribute>
+            <xs:attribute name="minvalue" type="xs:float" use="optional" />
+	    <xs:attribute name="maxvalue" type="xs:float" use="optional" />
+	    <xs:attribute name="probability" type="xs:float" use="optional" />
+            <xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="groundcover">
+		<xs:attribute name="number" use="required">
+		    <xs:simpleType>
+			<xs:restriction base="xs:integer">
+			     <xs:minInclusive value="0"/>
+			     <xs:maxInclusive value="9"/>
+			</xs:restriction>
+		    </xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="name" type="xs:string" use="optional"/>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="pressure">
+            <xs:attribute name="unit" type="xs:string" use="required"/>
+	    <xs:attribute name="value" use="required">
+		<xs:simpleType>
+		    <xs:restriction base="xs:decimal">
+			<xs:minInclusive value="0"/>
+		    </xs:restriction>
+		</xs:simpleType>
+	    </xs:attribute>
+	    <xs:attribute name="id" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="unit_value">
+	   <xs:attribute name="unit" type="xs:string" use="required" />
+	   <xs:attribute name="value" type="xs:float" use="required" />
+        </xs:complexType>
+
+	<xs:complexType name="uv">
+	    <xs:sequence>
+	        <xs:element name="uvi_clear" type="unit_value" />
+		<xs:element name="uvi_partly_cloudy" type="unit_value" />
+		<xs:element name="uvi_cloudy" type="unit_value" />
+		<xs:element name="uvi_forecast" type="unit_value" />
+		<xs:element name="ozon" type="unit_value" />
+		<xs:element name="snowcover" type="unit_value" />
+		<xs:element name="cloudcover" type="unit_value" />
+		<xs:element name="albedo" type="unit_value" />
+		<xs:element name="solar_zenith" type="unit_value" />
+	     </xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="score">
+	  <xs:attribute name="unit" type="xs:string" />
+	  <xs:attribute name="overall" type="xs:integer" />
+	  <xs:attribute name="very_good" type="xs:integer" />
+	  <xs:attribute name="good" type="xs:integer" />
+	  <xs:attribute name="mediocre" type="xs:integer" />
+	</xs:complexType>
+
+	<xs:complexType name="tidalwater">
+	    <xs:attribute name="unit" type="xs:string" />
+	    <xs:attribute name="tidal" type="xs:integer" use="required" />
+	    <xs:attribute name="weathercorrection" type="xs:integer" use="optional" />
+	</xs:complexType>
+
+	<xs:complexType name="locationType">
+		<xs:annotation>
+			<xs:documentation>Element containing weather parameters for this location
+			</xs:documentation>
+		</xs:annotation>
+
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="groundCover" type="groundcover" minOccurs="0" />
+
+			<xs:element name="pressure" type="pressure" minOccurs="0" />
+
+			<xs:element name="maximumPrecipitation" type="precipitation" minOccurs="0" />
+
+			<!-- Since 2015-01-19 highestTemperature is deprecated - use maxTemperature instead -->
+			<xs:element name="highestTemperature" type="temperature" minOccurs="0"/>
+
+			<!-- Since 2015-01-19 lowestTemperature is deprecated - use maxTemperature instead -->
+			<xs:element name="lowestTemperature" type="temperature" minOccurs="0"/>
+
+			<xs:element name="precipitation" type="precipitation" minOccurs="0" />
+
+			<xs:element name="fog" type="cloudiness" minOccurs="0"/>
+
+			<xs:element name="cloudiness" type="cloudiness" minOccurs="0"/>
+
+			<xs:element name="lowClouds" type="cloudiness" minOccurs="0"/>
+
+			<xs:element name="mediumClouds" type="cloudiness" minOccurs="0" />
+
+			<xs:element name="highClouds" type="cloudiness" minOccurs="0"/>
+
+			<xs:element name="temperature" type="temperature" minOccurs="0"/>
+
+			<xs:element name="dewpointTemperature" type="temperature" minOccurs="0"/>
+
+			<xs:element name="minTemperature" type="temperature" minOccurs="0"/>
+
+			<xs:element name="minTemperatureDay" type="temperature" minOccurs="0"/>
+
+			<xs:element name="minTemperatureNight" type="temperature" minOccurs="0"/>
+
+			<xs:element name="maxTemperature" type="temperature" minOccurs="0"/>
+
+			<xs:element name="maxTemperatureDay" type="temperature" minOccurs="0"/>
+
+			<xs:element name="maxTemperatureNight" type="temperature" minOccurs="0"/>
+			<xs:element name="uv" type="uv" minOccurs="0" />
+
+			<xs:element name="tidalwater" type="tidalwater" minOccurs ="0" />
+
+			<xs:element name="currentDirection" type="unit_value"
+			minOccurs="0" />
+			<xs:element name="maxWaveHeight" type="unit_value"
+			minOccurs="0" />
+			<xs:element name="surfaceTemperature"
+			type="unit_value" minOccurs="0" />
+
+			<xs:element name="waveDirection" type="unit_value"
+			minOccurs="0" />
+			<xs:element name="wavePeriod" type="unit_value"
+			minOccurs="0" />
+			<xs:element name="waveHeight" type="unit_value"
+			minOccurs="0" />
+
+
+			<xs:element name="humidity" type="unit_value"
+			minOccurs="0" />
+
+			<xs:element name="bias" type="unit_value"
+				    minOccurs ="0" />
+			<xs:element name="numberofobservations" type="unit_value" minOccurs ="0" />
+			<xs:element name="meanabsoluteerror" type="unit_value" minOccurs ="0" />
+			<xs:element name="score" type="score" minOccurs ="0" />
+			<xs:element name="windDirection" minOccurs="0">
+				<xs:complexType>
+					<xs:annotation>
+						<xs:documentation>Element denoting the wind direction by angle or
+						compass direction.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:attribute name="deg" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:decimal">
+								<xs:minInclusive value="0"/>
+								<xs:maxInclusive value="990"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="name" use="optional">
+						<xs:simpleType>
+							<xs:restriction base="xs:string"/>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="id" type="xs:string" use="optional"/>
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="windSpeed" type="windspeed" minOccurs="0"/>
+			<xs:element name="windGust" type="windspeed" minOccurs="0"/>
+
+			<xs:element name="maxWindSpeed"	type="windspeed" minOccurs="0"/>
+			<xs:element name="areaMaxWindSpeed" type="windspeed" minOccurs="0"/>
+
+			<xs:element name="stateOfTheSea" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="number" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:minInclusive value="0"/>
+								<xs:maxInclusive value="9"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="meter" type="xs:string" use="optional"/>
+					<xs:attribute name="name" type="xs:string" use="optional"/>
+					<xs:attribute name="id" type="xs:string" use="optional"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="snowDepth" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="cm" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:decimal">
+								<xs:minInclusive value="0"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="id" type="xs:string" use="optional"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="weather" minOccurs="0">
+				<xs:complexType>
+					<xs:annotation>
+						<xs:documentation>Element denoting a weather symbol by name or number.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:attribute name="name" use="optional">
+						<xs:simpleType>
+							<xs:restriction base="xs:string"/>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="number" use="required">
+						<xs:simpleType>
+							<xs:restriction base="xs:integer">
+								<xs:minInclusive value="0"/>
+								<xs:maxInclusive value="99"/>
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:attribute>
+					<xs:attribute name="id" type="xs:string" use="optional"/>
+					<xs:attribute name="symbol" type="xs:integer" use="optional"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="symbol" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="id" type="xs:string" use="optional"/>
+					<xs:attribute name="name" type="xs:string" use="optional"/>
+					<xs:attribute name="number" type="xs:integer" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="forest-fire" minOccurs="0">
+			    <xs:complexType>
+			        <xs:attribute name="unit" type="xs:string" />
+				<xs:attribute name="value" type="xs:string" />
+			    </xs:complexType>
+                        </xs:element>
+
+			<xs:element name="windProbability"
+			type="unit_value" minOccurs="0" />
+			<xs:element name="temperatureProbability"
+			type="unit_value" minOccurs="0" />
+			<xs:element name="symbolProbability"
+			type="unit_value" minOccurs="0" />
+
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:string" use="optional"/>
+		<xs:attribute name="name" type="xs:string" use="optional"/>
+                <xs:attribute name="stationid" type="xs:integer"
+				use="optional" />
+		<xs:attribute name="country" type="xs:string" use="optional"/>
+		<xs:attribute name="county" type="xs:string" use="optional"/>
+		<xs:attribute name="latitude" type="xs:string" use="optional"/>
+		<xs:attribute name="longitude" type="xs:string" use="optional"/>		<xs:attribute name="altitude" type="xs:string" use="optional"/>
+	</xs:complexType>
+
+
+</xs:schema>

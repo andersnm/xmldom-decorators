@@ -1,0 +1,44 @@
+{
+  "name": "sample-clients",
+  "private": true,
+  "version": "1.0.2",
+  "description": "Sample API clients generated using xmldom-decorators-cli",
+  "author": "andersnm",
+  "homepage": "https://github.com/andersnm/xmldom-decorators#readme",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andersnm/xmldom-decorators.git"
+  },
+  "scripts": {
+    "build": "npm run xsd-metno && npm run xsd-openml && tsc",
+    "test": "echo \"Error: run tests from root\" && exit 1",
+    "xsd-metno": "xmldom-decorators-cli xsd/met.no/locationforecast.xsd > src/met.no/reference.ts",
+    "xsd-openml": "xmldom-decorators-cli xsd/openml.org/openml.data.upload.xsd > src/openml.org/reference.ts"
+  },
+  "bugs": {
+    "url": "https://github.com/andersnm/xmldom-decorators/issues"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "@types/node": "^10.12.7",
+    "@types/node-fetch": "^2.1.6",
+    "@types/xmldom": "^0.1.29",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.4",
+    "typescript": "^3.3.1",
+    "xmldom-decorators-cli": "file:../xmldom-decorators-cli"
+  },
+  "dependencies": {
+    "fetch": "^1.1.0",
+    "xmldom-decorators": "file:../xmldom-decorators"
+  }
+}
