@@ -27,6 +27,20 @@ const builtinTypes: SchemaClass[] = [
     },
     {
         type: "builtinType",
+        name: "token",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "NMTOKEN",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
         name: "decimal",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "Number",
@@ -42,6 +56,13 @@ const builtinTypes: SchemaClass[] = [
     {
         type: "builtinType",
         name: "integer",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "positiveInteger",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "Number",
         members: [],
@@ -97,6 +118,10 @@ function getClassName(path: string|string[]|undefined): string|undefined {
 
     if (path === undefined) {
         return undefined;
+    }
+
+    if (path === "Date" || path === "String" || path === "Number" || path == "Boolean") {
+        return path + "Type";
     }
 
     if (Array.isArray(path)) {
@@ -233,7 +258,10 @@ class SchemaClassVisitor extends SchemaVisitor {
                     // TODO: reference cycle = infinite loop
                     element = elementRef;
                 } else {
-                    throw new Error("Unable to determine type for element " + JSON.stringify(element));
+                    // Default element type string
+                    elementType = this.mapper.getBuiltinSchemaClass("string");
+                    break;
+                    // throw new Error("Unable to determine type for element " + JSON.stringify(element));
                 }
             }
 
@@ -290,7 +318,10 @@ class SchemaClassVisitor extends SchemaVisitor {
                     attribute = attributeRef;
 
                 } else {
-                    throw new Error("Unable to determine type for attribute " + JSON.stringify(attribute));
+                    // Default attribute type string
+                    attributeType = this.mapper.getBuiltinSchemaClass("string");
+                    break;
+                    // throw new Error("Unable to determine type for attribute " + JSON.stringify(attribute));
                 }
             }
 
@@ -345,7 +376,19 @@ class SchemaClassVisitor extends SchemaVisitor {
             throw new Error("Expected base in simpleContent extension");
         }
 
-        const textType = this.mapper.getSchemaClassByQName(simpleContent.extension.base);
+        let textType = this.mapper.getSchemaClassByQName(simpleContent.extension.base);
+
+        // Remove restrictions on simpleType, should resolve to a builtin type
+        while (textType && textType.simpleType && textType.simpleType.restriction) {
+            if (!textType.simpleType.restriction.base) {
+                throw new Error("Expected base on restriction");
+            }
+            textType = this.mapper.getSchemaClassByQName(textType.simpleType.restriction.base);
+        }
+
+        if (!textType) {
+            throw new Error("Could not determine type for simple content " + JSON.stringify(simpleContent));
+        }
 
         const top = this.typeStack[this.typeStack.length - 1];
         top.members.push({

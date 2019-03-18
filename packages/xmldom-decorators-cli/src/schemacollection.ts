@@ -41,7 +41,7 @@ export class SchemaCollection {
 
     public getSimpleType(name: QName): SimpleType|undefined {
         for (let schema of this.schemas) {
-            if (schema.targetNamespace !== name.namespaceUri) {
+            if ((schema.targetNamespace || "") !== name.namespaceUri) {
                 continue;
             }
 
