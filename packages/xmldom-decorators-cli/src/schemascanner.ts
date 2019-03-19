@@ -4,6 +4,7 @@ import { SchemaVisitor } from './schemavisitor';
 import { SchemaClass } from './classtypes';
 
 const builtinTypes: SchemaClass[] = [
+    // String types
     {
         type: "builtinType",
         name: "string",
@@ -13,14 +14,7 @@ const builtinTypes: SchemaClass[] = [
     },
     {
         type: "builtinType",
-        name: "anyURI",
-        namespaceUri: "http://www.w3.org/2001/XMLSchema",
-        javaScriptType: "String",
-        members: [],
-    },
-    {
-        type: "builtinType",
-        name: "QName",
+        name: "normalizedString",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "String",
         members: [],
@@ -34,11 +28,115 @@ const builtinTypes: SchemaClass[] = [
     },
     {
         type: "builtinType",
+        name: "language",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
         name: "NMTOKEN",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "String",
         members: [],
     },
+    {
+        type: "builtinType",
+        name: "NMTOKENS",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "Name",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "NCName",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+
+    // Other types
+    {
+        type: "builtinType",
+        name: "QName",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "boolean",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Boolean",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "hexBinary",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "base64Binary",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "anyURI",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "notation",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+
+    // Magic types
+    {
+        type: "builtinType",
+        name: "ID",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "IDREFS",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "ENTITY",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "ENTITIES",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+
+    // Numeric types
     {
         type: "builtinType",
         name: "decimal",
@@ -48,7 +146,14 @@ const builtinTypes: SchemaClass[] = [
     },
     {
         type: "builtinType",
-        name: "int",
+        name: "float",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "double",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "Number",
         members: [],
@@ -69,6 +174,27 @@ const builtinTypes: SchemaClass[] = [
     },
     {
         type: "builtinType",
+        name: "negativeInteger",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "nonPositiveInteger",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "nonNegativeInteger",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
         name: "long",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "Number",
@@ -76,11 +202,55 @@ const builtinTypes: SchemaClass[] = [
     },
     {
         type: "builtinType",
-        name: "float",
+        name: "int",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "Number",
         members: [],
     },
+    {
+        type: "builtinType",
+        name: "short",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "byte",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "unsignedLong",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "unsignedInt",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "unsignedShort",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "unsignedByte",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "Number",
+        members: [],
+    },
+
+    // Date types
     {
         type: "builtinType",
         name: "date",
@@ -93,6 +263,48 @@ const builtinTypes: SchemaClass[] = [
         name: "dateTime",
         namespaceUri: "http://www.w3.org/2001/XMLSchema",
         javaScriptType: "Date",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "gYearMonth",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "gYear",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "duration",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "gMonthDay",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "gDay",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
+        members: [],
+    },
+    {
+        type: "builtinType",
+        name: "gMonth",
+        namespaceUri: "http://www.w3.org/2001/XMLSchema",
+        javaScriptType: "String",
         members: [],
     },
 ];
