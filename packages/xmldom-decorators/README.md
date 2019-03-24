@@ -87,45 +87,157 @@ Serializes a JavaScript object into an XML string.
 - `type` - Must be a class with the `@XMLRoot` decorator.
 - `defaultNSPrefixMap` - Optional dictionary with namespace URI as the key and prefix as the value. Overrides the default namespace prefixes (p0, p1...). All prefixes must be unique. The prefix can be an empty string for no prefix.
 
+### DeserializerContext
+
+The attribute factory receives a DeserializerContext upon deserialization. This is primarily used to resolve QName attribute values.
+
+#### `resolvePrefix(prefix: string): string`
+
+Returns the namespace URI of the provided prefix. Throws if the prefix is invalid.
+
+### SerializerContext
+
+The attribute factory receives a SerializerContext upon serialization. This is primarily used to serialize QName attribute values.
+
+#### `getQualifiedName(elementName: string, namespaceUri: string): string`
+
+Returns a fully qualified element name with prefix, given the unqualified element name and a namespace URI.
+
 ## Decorators
 
 #### `@XMLRoot({name?, namespaceUri?})`
 
 Applied to classes which define a root XML document element.
 
-- `name: string` - The unqualified name of the root element. Default: the name of the type the decorator was applied to.
+```ts
+@XMLRoot({
+  // The unqualified name of the root element.
+  // Default: the class name.
+  name: "elementName",
+
+  // The namespace URI of the root element.
+  // Default: empty string/no namespace.
+  namespaceUri: "xml-uri",
+})
+```
 
 #### `@XMLElement({types: [{name?, namespaceUri?, itemType?, isType?}]})`
 
-Applied to class members which define an XML element. Must have a value type or class type. Throws a runtime error if applied to an array type.
+Applied to class members. Maps the class member to an XML element. Must have a value type or class type. Throws a runtime error if applied to an array type.
 
-- `types: []` - Array of possible element types for this field. Default: one element with property name and decorated type.
-- `types[].name: string` - The unqualified name of the element. Required if more than one type.
-- `types[].itemType: () => Function` - Callback returning the type of the element. Required if more than one type.
-- `types[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required if more than one type.
+It is permitted to map multiple name/type pairs to a class member. *One of* the types will be (de)serialized. During serialization, the item type determines which XML element will be written. During deserialization, the XML element name determines which item type will be read.
+
+```ts
+@XMLElement({
+  // Optional array of types to match.
+  // Default: one element with the property name and decorated type.
+  types: [
+    {
+      // The unqualified name of the element.
+      // Required if more than one type. If specified, must be unique within the class.
+      name: "elementName",
+
+      // The namespace of the element.
+      // Default: empty string/no namespace.
+      namespaceUri: "xml-uri",
+
+      // Callback returning the type of the element.
+      // Required if more than one type. If specified, must be unique within the types array.
+      itemType: () => String,
+
+      // Callback checking the type of a JavaScript object for serializing.
+      // Required if more than one type and the data items are not constructed from the item type (e.g object literals).
+      isType: (o) => o.constructor === String
+    }
+  ]
+})
+```
 
 #### `@XMLAttribute({name?, namespaceUri?, factory?, type?})`
 
 Applied to class members which define an attribute on an XML element. Must have value type. Throws a runtime error if applied to a class or an array type.
 
-- `name: string` - The unqualified name of the attribute. Default: the name of the property the decorator was applied to.
-- `factory: Tuple` - Optional. Callbacks to convert an XML attribute value to and from a JavaScript object.
-- `type: Function` - Optional. The type of the attribute if it can't be derived from emitted decorator metadata.
+```ts
+@XMLAttribute({
+  // The unqualified name of the attribute.
+  // Default: the property name. If specified, must be unique within the class.
+  name: "elementName",
+
+  // The namespace URI of the attribute.
+  // Default: null/belongs to the element.
+  namespaceUri: "xml-uri",
+
+  // Tuple with callbacks to convert an XML attribute value to and from a JavaScript object.
+  // Optional. Mutually exclusive with the type.
+  factory: [
+    // Callback to convert from an attribute value to a JavaScript object.
+    (value: string, ctx: DeserializerContext) => new Mine(value),
+
+    // Callback to convert from a JavaScript object to an attribute value.
+    (value: any, ctx: SerializerContext) => value.toString()
+  ],
+
+  // The type of the attribute if it can't be derived from emitted decorator metadata.
+  // Optional. Mutually exclusive with the factory.
+  type: String,
+})
+```
 
 #### `@XMLArray({name?, namespaceUri?, nested?, itemTypes: [{name?, namespaceUri?, itemType?, isType?}]})`
 
 Applied to class members which define an array of XML elements, with or without a container XML element. Throws a runtime error if applied to a type which is not an array type.
 
-- `name: string` - The unqualified name of the array container element. Default: the name of the property the decorator was applied to.
-- `nested: boolean` - Specifies if there is a container element for the array items. Default: true.
-- `itemTypes: []` - Array of possible element types in the array. Required.
-- `itemTypes[].name: string` - The unqualified element name an array item. Default: the name of the item type.
-- `itemTypes[].itemType: () => Function` - Callback returning the type of an array items. Required.
-- `itemTypes[].isType: (o) => Function` - Callback checking the type of a JavaScript object for serializing. Required.
-	
-#### `@XMLText()`
+It is permitted to map multiple name/type pairs to an array class member. *Any of* the types will be (de)serialized. During serialization, the item type determines which XML element will be written. During deserialization, the XML element name determines which item type will be read.
 
-Applied to class members which define the text content of an XML element.
+```ts
+@XMLArray({
+  // Specifies if there is a container element for the array items.
+  // Default: true.
+  nested: true,
+
+  // The unqualified name of the array container element.
+  // Default: the name of the property the decorator was applied to. Ignored if not nested. If specified, must be unique within the class.
+  name: "containerName",
+
+  // The namespace URI of the array container element.
+  // Default: empty string/no namespace. Ignored if not nested.
+  namespaceUri: "xml-uri",
+
+  // Array of possible element types to match in the array.
+  // Required.
+  itemTypes: [
+    {
+      // The unqualified name of the array item element.
+      // If nested, must be unique within the itemTypes array if specified, otherwise defaults to the name of the item type.
+      // If not nested, must be unique within the class if specified, otherwise defaults to the name of the property.
+      name: "elementName",
+
+      // The namespace URI of the array item element. Default: empty string/no namespace.
+      namespaceUri: "xml-uri",
+
+      // Callback returning the type of an array item.
+      // Required. Must be unique within the itemTypes array.
+      itemType: () => String,
+
+      // Callback checking the type of a JavaScript object for serializing.
+      // Required if more than one type and the data items are not constructed from the item type (e.g object literals).
+      isType: (o) => o.constructor === String
+    }
+  ]
+})
+```
+
+#### `@XMLText({type?})`
+
+Applied to a class member which define the text content of an XML element. There can only be one @XMLText() decorator per class.
+
+
+```ts
+@XMLText({
+  // Optional override of the decorated type.
+  type: Number
+})
+```
 
 ## Limitations and notes
 
@@ -161,7 +273,7 @@ class Test {
 	// forward?: ForwardClass;
 
 	// Workaround with array still allows to (de)serialize the XML:
-	@XMLArray({itemTypes: [{itemType: () => ForwardClass, nested: false}]})
+	@XMLArray({nested: false, itemTypes: [{itemType: () => ForwardClass}]})
 	forward?: ForwardClass[];
 }
 
@@ -196,6 +308,8 @@ Given an XML like this:
 <element attr="value">Hello world</element>
 ```
 
+Create a new class and add separate members decorated with @XMLAttribute and @XMLText.
+
 ### Parsing XML with qualified names in attribute values
 
 Given an XML like this:
@@ -203,6 +317,8 @@ Given an XML like this:
 ```xml
 <ns:element attr="ns:value" xmlns:ns="uri" />
 ```
+
+See the xmldom-decorators-cli project's XSD parser.
 
 ### Parsing XML with significant order of child elements
 
@@ -219,7 +335,7 @@ Given an XML like this:
 </schema>
 ```
 
-
+See the xmldom-decorators-cli project's XSD parser.
 
 ## TODO
 
