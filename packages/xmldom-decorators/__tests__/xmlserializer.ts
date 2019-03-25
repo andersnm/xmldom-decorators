@@ -151,6 +151,15 @@ class MultiArrayItemType {
 	elements: (ArrayThing|ArrayStuff)[] = [];
 }
 
+@XMLRoot()
+class MultiArrayConstructorItemType {
+	@XMLArray({nested: false, itemTypes: [
+		{name: "thing", itemType: () => ArrayThing },
+		{name: "stuff", itemType: () => ArrayStuff },
+	]})
+	elements: (ArrayThing|ArrayStuff)[] = [];
+}
+
 class ArrayThing {
 	@XMLAttribute()
 	thingID: string = "";
@@ -378,7 +387,7 @@ describe("Decorators", () => {
 		expect(z).toEqual(o);
 	});
 
-	test("Array with multiple item types", () => {
+	test("Array with multiple item types and isType", () => {
 		const o: MultiArrayItemType = {
 			elements: [
 				{
@@ -395,6 +404,26 @@ describe("Decorators", () => {
 
 		const x: any = deserialize(a, MultiArrayItemType);
 		expect(x).toBeInstanceOf(MultiArrayItemType);
+		expect(x).toEqual(o);
+	});
+
+	test("Array with multiple constructed item types and no isType", () => {
+		const o: MultiArrayConstructorItemType = {
+			elements: [
+				mix(new ArrayStuff(), {
+					stuffID: "hello",
+				}),
+				mix(new ArrayThing(), {
+					thingID: "world",
+				}),
+			]
+		};
+
+		const a = serialize(o, MultiArrayConstructorItemType);
+		expect(a).toBe('<MultiArrayConstructorItemType><stuff stuffID="hello"/><thing thingID="world"/></MultiArrayConstructorItemType>');
+
+		const x: any = deserialize(a, MultiArrayConstructorItemType);
+		expect(x).toBeInstanceOf(MultiArrayConstructorItemType);
 		expect(x).toEqual(o);
 	});
 
@@ -429,6 +458,22 @@ describe("Decorators", () => {
 		expect(x).toBeInstanceOf(MultiMemberType);
 		expect(x).toEqual(o);
 	});
+
+	test.skip("Read first element if more than one in XML", () => {
+		// TODO: bug
+		const result = "<StringInRoot><name>Hello World</name><name>Second World</name></StringInRoot>";
+		const x: any = deserialize(result, StringInRoot);
+		expect(x).toEqual({ name: "Hello World" });
+	});
+
+	test("Don't invoke factory for missing attributes", () => {
+		const o: ResolveAttributePrefix = { };
+		const result = serialize(o, ResolveAttributePrefix);
+		expect(result).toBe('<p0:ResolveAttributePrefix xmlns:p0="uri-test"/>');
+
+		const x: any = deserialize(result, ResolveAttributePrefix);
+		expect(x).toEqual(o);
+	});
 });
 
 function serialize(data: any, type: Function, localName?: string, ns?: string): string {
@@ -439,4 +484,8 @@ function serialize(data: any, type: Function, localName?: string, ns?: string): 
 function deserialize(text: string, type: Function|Function[]): any {
 	const deserializer = new XMLDecoratorDeserializer();
 	return deserializer.deserialize(text, type);
+}
+
+function mix<T>(target: T, source: Partial<T>): T {
+	return Object.assign(target, source);
 }

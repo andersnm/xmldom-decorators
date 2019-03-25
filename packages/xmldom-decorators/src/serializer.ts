@@ -91,12 +91,15 @@ export class XMLDecoratorSerializer implements SerializerContext {
         const children: BaseSchema[] = Reflect.getMetadata("xml:type:children", type) || [];
         for (let child of children) {
             if (isAttributeSchema(child)) {
-                let value: any;
-                if (child.factory) {
-                    value = child.factory[1](data[child.propertyKey], this);
-                } else {
-                    value = this.convertValue(data[child.propertyKey], child.type);
+                let value: any = data[child.propertyKey];
+                if (value !== undefined) {
+                    if (child.factory) {
+                        value = child.factory[1](value, this);
+                    } else {
+                        value = this.convertValue(value, child.type);
+                    }
                 }
+
                 if (value !== undefined) {
                     const attrName = this.getQualifiedAttributeName(child.name, child.namespaceUri);
                     element.setAttributeNS(child.namespaceUri, attrName, value);
@@ -180,13 +183,20 @@ export class XMLDecoratorSerializer implements SerializerContext {
     }
 
     private getArrayItemType(itemTypes: ArrayItemOptions[], dataItem: any): ArrayItemOptions|null {
-        if (itemTypes.length === 0) {
-            throw new Error("@XMLArrayItem must be specified if @XMLArray is specified");
+        // First check if the data constructor matches any of the item types
+        for (let schemaItemType of itemTypes) {
+            if (!schemaItemType.itemType) {
+                throw new Error("itemType must be specified. " +  + JSON.stringify(schemaItemType));
+            }
+
+            if (dataItem.constructor === schemaItemType.itemType()) {
+                return schemaItemType;
+            }
         }
 
         for (let schemaItemType of itemTypes) {
             if (!schemaItemType.itemType) {
-                throw new Error("@XMLArrayItem itemType must be specified");
+                throw new Error("itemType must be specified. " +  + JSON.stringify(schemaItemType));
             }
 
             if (itemTypes.length === 1) {
@@ -194,9 +204,7 @@ export class XMLDecoratorSerializer implements SerializerContext {
             }
 
             if (!schemaItemType.isType) {
-                // TODO: use dataItem.constructor if more than one itemType, otherwise, accept the one given!
-                throw new Error("@XMLArrayItem isType must be specified when a member is decorated with more than one @XMLArrayItem");
-                continue;
+                throw new Error("When serializing a value with multiple types, the value must have a matching constructor or specify a callback for isType. " + JSON.stringify(schemaItemType));
             }
 
             if (schemaItemType.isType(dataItem)) {
