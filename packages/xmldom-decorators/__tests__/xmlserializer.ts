@@ -474,6 +474,20 @@ describe("Decorators", () => {
 		const x: any = deserialize(result, ResolveAttributePrefix);
 		expect(x).toEqual(o);
 	});
+
+	test("Throw if array without itemType", () => {
+		expect(() => {
+
+			@XMLRoot()
+			class ArrayNoItemTypeError {
+				@XMLArray({itemTypes: [
+					{name: "thing1"},
+				]})
+				things?: string[];
+			}
+				
+		}).toThrow(new Error("@XMLArray must declare item type on things"));
+	});
 });
 
 function serialize(data: any, type: Function, localName?: string, ns?: string): string {

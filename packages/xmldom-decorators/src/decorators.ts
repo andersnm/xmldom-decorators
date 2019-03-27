@@ -201,7 +201,7 @@ export function XMLElement<T>(opts: ElementOptions = {}) {
         targetChildren.push({
             propertyKey: propertyKey,
             xmlType: "element",
-            types: !!opts.types ? getItemTypes(opts.types, type) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
+            types: !!opts.types ? getElementTypes(propertyKey, opts.types, type) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
         } as ElementSchema);
     }
 }
@@ -229,24 +229,6 @@ export function XMLAttribute(opts: AttributeOptions = {}) {
     }
 }
 
-function getItemTypes(types: ArrayItemOptions[], fallbackType: Function): ArrayItemOptions[] {
-    // Throw if types have duplicate names; the name is the xml disambiguator
-    // TODO: check default names too (later)
-    for (let type of types) {
-        if (type.name && types.find(t => t !== type && t.name === type.name)) {
-            throw new Error("Cannot have duplicate item type name " + type.name);
-        }
-    }
-
-    // If there is a single type without itemType, use the default fallback type from decorator metadata
-    return types.map(t => ({
-        name: t.name || null, // null means to calculate a default when needed
-        namespaceUri: t.namespaceUri || "",
-        isType: t.isType,
-        itemType: t.itemType || (types.length === 1 ? () => fallbackType : undefined),
-    } as ArrayItemOptions));
-}
-
 export function XMLArray(opts: ArrayOptions = {}) {
     return function(target: any, propertyKey: string) {
         const type = Reflect.getMetadata("design:type", target, propertyKey);
@@ -268,7 +250,7 @@ export function XMLArray(opts: ArrayOptions = {}) {
             namespaceUri: opts.namespaceUri || "",
             xmlType: "array",
             nested: nested,
-            itemTypes: !!opts.itemTypes ? getItemTypes(opts.itemTypes, type) : [],
+            itemTypes: !!opts.itemTypes ? getArrayItemTypes(propertyKey, opts.itemTypes, type) : [],
         };
 
         targetChildren.push(arraySchema);
@@ -312,4 +294,43 @@ export function XMLText(opts: TextOptions = {}) {
 
         targetChildren.push(textSchema);
     }
+}
+
+function getElementTypes(propertyKey: string, types: ArrayItemOptions[], fallbackType: Function): ArrayItemOptions[] {
+    // Throw if types have duplicate names; the name is the xml disambiguator
+    // TODO: check default names too (later)
+    for (let type of types) {
+        if (type.name && types.find(t => t !== type && t.name === type.name)) {
+            throw new Error("@XMLElement cannot declare duplicate element name " + type.name + " on " + propertyKey);
+        }
+    }
+
+    // If there is a single type without itemType, use the default fallback type from decorator metadata
+    return types.map(t => ({
+        name: t.name || null, // null means to calculate a default when needed
+        namespaceUri: t.namespaceUri || "",
+        isType: t.isType,
+        itemType: t.itemType || (types.length === 1 ? () => fallbackType : undefined),
+    } as ArrayItemOptions));
+}
+
+function getArrayItemTypes(propertyKey: string, types: ArrayItemOptions[], fallbackType: Function): ArrayItemOptions[] {
+    // Throw if types have duplicate names; the name is the xml disambiguator
+    // TODO: check default names too (later)
+    for (let type of types) {
+        if (type.name && types.find(t => t !== type && t.name === type.name)) {
+            throw new Error("@XMLArray cannot declare duplicate element name " + type.name + " on " + propertyKey);
+        }
+
+        if (!type.itemType) {
+            throw new Error("@XMLArray must declare item type on " + propertyKey);
+        }
+    }
+
+    return types.map(t => ({
+        name: t.name || null, // null means to calculate a default when needed
+        namespaceUri: t.namespaceUri || "",
+        isType: t.isType,
+        itemType: t.itemType,
+    } as ArrayItemOptions));
 }
