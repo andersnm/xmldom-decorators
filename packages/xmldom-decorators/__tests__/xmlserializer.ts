@@ -488,6 +488,33 @@ describe("Decorators", () => {
 				
 		}).toThrow(new Error("@XMLArray must declare item type on things"));
 	});
+
+	test("Throw if deserialize plain string", () => {
+		expect(() => {
+			deserialize("not xml", EmptyRoot);
+		}).toThrow(new Error("Unexpected character data"));
+	});
+
+	test("Throw if deserialize bad XML", () => {
+		expect(() => {
+			deserialize("<EmptyRoot not xml", EmptyRoot);
+		}).toThrow();
+	});
+
+	test("Throw if deserialize text before XML", () => {
+		expect(() => {
+			deserialize("not xml <EmptyRoot/>", EmptyRoot);
+		}).toThrow(new Error("Unexpected character data"));
+	});
+
+	test("Do not throw if text after XML", () => {
+		deserialize("<EmptyRoot/>abcdef", EmptyRoot);
+	});
+
+	test("Do not throw if XML after XML", () => {
+		deserialize("<EmptyRoot/><EmptyRoot/><EmptyRoot/>", EmptyRoot);
+	});
+
 });
 
 function serialize(data: any, type: Function, localName?: string, ns?: string): string {

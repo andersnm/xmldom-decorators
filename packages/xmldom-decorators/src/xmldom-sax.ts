@@ -33,6 +33,7 @@ declare module 'xmldom/sax' {
     interface DOMBuilder {
         locator: Locator|null;
         currentElement: any;
+        doc: any;
         startDocument(): void;
         endDocument(): void;
         characters(xt: string, start: number, length: number): void;

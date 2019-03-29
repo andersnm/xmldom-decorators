@@ -51,9 +51,27 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     private xmlRootSchemas: RootSchema[];
     private elementStack: ElementContext[] = [];
     private prefixStack: [string, string][] = [];
-    public locator: Locator = null as any as Locator;
+    private started: boolean = false; // Indicates whether any XML content has occurred. Used to throw errors on non-XML input
+    private ended: boolean = false; // Indicates whether the root element has been closed. Used to ignore additional input
+    public locator: Locator = {
+        columnNumber: 0,
+        lineNumber: 0,
+    };
     public currentElement: any = null;
     public result: any = null;
+
+    // The xmldom sax API does DOM manipulation for text at the end of the stream.
+    public doc = {
+        builder: this,
+        createTextNode(text: string) {
+            if (!this.builder.started) {
+                // Throw if the stream is entirely non-xml and has no '<' characters
+                throw new Error("Unexpected character data");
+            }
+        },
+        appendChild(node: any) {
+        }
+    };
 
     constructor(xmlRootSchemas: RootSchema[]) {
         this.xmlRootSchemas = xmlRootSchemas;
@@ -67,6 +85,11 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     characters(xt: string, start: number, length: number): void {
+        if (!this.started) {
+            // Throw if any characters before first '<' character
+            throw new Error("Unexpected character data");
+        }
+
         if (this.elementStack.length === 0) {
             return; // Ignore f.ex whitespace between <?xml...> and root element
         }
@@ -93,6 +116,12 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     startElement(ns: string, localName: string, tagName: string, el: ElementAttributes): void {
+        if (this.ended) {
+            return ;
+        }
+
+        this.started = true;
+
         if (this.elementStack.length === 0) {
             this.startRoot(ns, localName, tagName, el)
             return ;
@@ -189,6 +218,9 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     endElement(ns: string, localName: string, tagName: string): void {
+        if (this.ended) {
+            return ;
+        }
 
         const parent = this.elementStack.pop();
         if (!parent) {
@@ -203,6 +235,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
         if (this.elementStack.length === 0) {
             this.result = parent.value;
+            this.ended = true; // signal to ignore remainder of sax events
             return;
         }
 
@@ -232,12 +265,20 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     startPrefixMapping(nsPrefix: string, value: string): void {
+        if (this.ended) {
+            return ;
+        }
+
         // Is called before startElement => no elementStack
         // Use separate prefix stack
         this.prefixStack.push([nsPrefix, value]);
     }
 
     endPrefixMapping(prefix: string): void {
+        if (this.ended) {
+            return ;
+        }
+
         // Pop the topmost matching prefix
         for (let i = this.prefixStack.length - 1; i >= 0; i--) {
             if (this.prefixStack[i][0] === prefix) {
@@ -250,6 +291,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     comment(source: string, start: number, length: number): void {
+        this.started = true;
     }
 
     startCDATA(): void {
@@ -259,12 +301,14 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
     }
 
     startDTD(name: string, pubid: string, sysid: string): void {
+        this.started = true;
     }
 
     endDTD(): void {
     }
 
     processingInstruction(p1: string, p2: string): void {
+        this.started = true;
     }
 
     resolvePrefix(prefix: string): string {
@@ -442,10 +486,6 @@ export class XMLDecoratorDeserializer {
 
         var reader = new XMLReader();
         var builder = new DeserializerBuilder(rootSchemas);
-        builder.locator = {
-            columnNumber: 0,
-            lineNumber: 0,
-        };
 
         reader.domBuilder = builder;
 
