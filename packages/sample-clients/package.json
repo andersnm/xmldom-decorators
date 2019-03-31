@@ -1,7 +1,7 @@
 {
   "name": "sample-clients",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "Sample API clients generated using xmldom-decorators-cli",
   "author": "andersnm",
   "homepage": "https://github.com/andersnm/xmldom-decorators#readme",
