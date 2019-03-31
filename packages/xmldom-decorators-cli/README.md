@@ -1,11 +1,11 @@
-# `xmldom-decorators-cli`
+# xmldom-decorators-cli
 
-> TODO: description
+Command line tool to generate TypeScript classes from XML Schema/XSD. The TypeScript classes can be serialized and deserialized using the xmldom-decorators library.
 
 ## Usage
 
+```bash
+xmldom-decorators-cli myfile.xsd
 ```
-const xmldomDecoratorsCli = require('xmldom-decorators-cli');
 
-// TODO: DEMONSTRATE API
-```
+Prints generated TypeScript code to the console.

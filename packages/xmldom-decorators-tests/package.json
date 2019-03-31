@@ -1,0 +1,31 @@
+{
+  "name": "xmldom-decorators-test",
+  "private": true,
+  "version": "1.0.2",
+  "description": "Tests for xmldom-decorators",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "verbose": false,
+    "testEnvironment": "node",
+    "collectCoverage": true
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "@types/node": "^10.12.7",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.4",
+    "typescript": "^3.3.1"
+  },
+  "dependencies": {
+    "xmldom-decorators": "file:../xmldom-decorators",
+    "xmldom-decorators-cli": "file:../xmldom-decorators-cli"
+  }
+}

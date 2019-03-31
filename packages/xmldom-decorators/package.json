@@ -15,21 +15,11 @@
     "lib"
   ],
   "scripts": {
-    "test": "jest",
     "build": "tsc"
   },
-  "jest": {
-    "preset": "ts-jest",
-    "verbose": false,
-    "testEnvironment": "node",
-    "collectCoverage": true
-  },
   "devDependencies": {
-    "@types/jest": "^23.3.9",
     "@types/node": "^10.12.7",
     "@types/xmldom": "^0.1.29",
-    "jest": "^23.6.0",
-    "ts-jest": "^23.10.4",
     "typescript": "^3.3.1"
   },
   "dependencies": {

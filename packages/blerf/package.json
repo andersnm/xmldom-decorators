@@ -1,0 +1,24 @@
+{
+  "name": "blerf",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Blerf solution management tool",
+  "author": "andersnm",
+  "license": "MIT",
+  "bin": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.7",
+    "typescript": "^3.3.1"
+  },
+  "dependencies": {
+    "read-package-json": "2.0.13",
+    "stringify-package": "1.0.0",
+    "tar": "4.4.8"
+  }
+}

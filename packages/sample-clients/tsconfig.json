@@ -5,15 +5,9 @@
     "declaration": true,
     "outDir": "./lib",
     "strict": true,
-    "inlineSourceMap": true,
+    "sourceMap": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "baseUrl": "./",
-    "paths": {
-      "xmldom-decorators": ["../xmldom-decorators"],
-      "xmldom-decorators-cli": ["../xmldom-decorators-cli"],
-    }
+    "emitDecoratorMetadata": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*", "lib"]
+  "include": ["src"]
 }
