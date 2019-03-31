@@ -7,6 +7,7 @@ Tool to manage multiple projects in a solution (aka monorepo)
 - Install npm dependencies in multiple projects
 - Run npm scripts in multiple project
 - Run `npm pack` in multiple projects and fix up local project references
+- Run scripts in topological order
 
 ## Commands
 
@@ -26,7 +27,6 @@ Executes `npm pack` in each directory under ./packages containing a package.json
 
 - Create a root package.json with a dependency on blerf
 - Create new projects in directories under ./packages
-- Create separate projects for tests
 - Add project references as dependencies using relative `file:` references in package.json
 
 ## Release workflow

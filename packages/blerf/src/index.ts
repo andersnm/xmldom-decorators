@@ -4,9 +4,12 @@ import * as path from 'path';
 import * as os from 'os';
 import * as process from 'process';
 import * as childProcess from 'child_process';
-const readJson = require("read-package-json");
+import { toposort } from './toposort';
 const stringifyPackage = require("stringify-package");
 const tar = require('tar')
+
+type PackageInfoType = { packagePath: string, packageJson: any};
+type PackagesType = {[packageName: string]: PackageInfoType};
 
 const rootPath = "packages";
 
@@ -36,7 +39,7 @@ async function install(): Promise<void> {
 }
 
 async function pack(): Promise<void> {
-    await enumeratePackages(async (packagePath: string, packageJson: any) => {
+    await enumeratePackages(async (packagePath: string, packageJson: any, packages: PackagesType) => {
         childProcess.execSync("npm pack", {stdio: 'inherit', cwd: packagePath});
 
         console.log("blerf: patching project references");
@@ -47,7 +50,7 @@ async function pack(): Promise<void> {
 
         try {
             tar.extract({ file: sourcePackageTarPath, cwd: tempPath, sync: true });
-            await patchPackageJson(packagePath, path.join(tempPath, "package", "package.json"));
+            patchPackageJson(packagePath, path.join(tempPath, "package", "package.json"), packages);
             tar.create({ file: sourcePackageTarPath, cwd: tempPath, gzip: true, sync: true, }, ["package"]);
         } finally {
             rimraf(tempPath);
@@ -55,8 +58,13 @@ async function pack(): Promise<void> {
     });
 }
 
-async function enumeratePackages(callback: (packagePath: string, packageJson: any) => Promise<void>) {
+async function enumeratePackages(callback: (packagePath: string, packageJson: any, packages: PackagesType) => Promise<void>) {
     const files = fs.readdirSync(rootPath);
+
+    const packages: PackagesType = {};
+
+    const nodes: string[] = [];
+    const edges: [string, string][] = [];
 
     for (let fileName of files) {
         const packagePath = rootPath + "/" + fileName;
@@ -65,9 +73,31 @@ async function enumeratePackages(callback: (packagePath: string, packageJson: an
             continue;
         }
 
-        const packageJson = await readPackageJson(path.join(packagePath, "package.json"));
+        const packageJson = readPackageJson(path.join(packagePath, "package.json"));
+        nodes.push(packageJson.name);
+        for (let dependencyName of Object.keys(packageJson.dependencies)) {
+            const ref = packageJson.dependencies[dependencyName];
+            if (ref.startsWith("file:")) {
+                edges.push([dependencyName, packageJson.name])
+            }
+        }
+
+        packages[packageJson.name] = {
+            packageJson: packageJson,
+            packagePath: packagePath
+        };
+    }
+
+    const sorted = toposort(nodes, edges);
+    console.log("blerf: project order: " + sorted.join(", "));
+
+    for (let packageName of sorted) {
+        const packageInfo = packages[packageName];
+        const packageJson = packageInfo.packageJson;
+        const packagePath = packageInfo.packagePath;
+
         try {
-            await callback(packagePath, packageJson);
+            await callback(packagePath, packageJson, packages);
         } catch (e) {
             console.error("blerf: Error executing command in " + packagePath)
             console.error("blerf: ", e);
@@ -76,12 +106,7 @@ async function enumeratePackages(callback: (packagePath: string, packageJson: an
     }
 }
 
-async function getPackageVersion(packagePath: string): Promise<string> {
-    const packageJson = await readPackageJson(path.join(packagePath, "package.json"));
-    return packageJson.version;
-}
-
-async function updateDependencyVersions(packagePath: string, packageDependencies: any) {
+function updateDependencyVersions(packagePath: string, packageDependencies: any, packages: PackagesType) {
     if (!packageDependencies) {
         return;
     }
@@ -92,33 +117,26 @@ async function updateDependencyVersions(packagePath: string, packageDependencies
             continue;
         }
 
-        const version = await getPackageVersion(path.join(packagePath, ref.substr(5)));
-        packageDependencies[dependencyName] = version;
+        const dependencyPackageInfo = packages[dependencyName];
+        if (dependencyPackageInfo) {
+            packageDependencies[dependencyName] = dependencyPackageInfo.packageJson.version;
+        } else {
+            // TODO: possibly noop instead?
+            throw new Error("Expected file:-based reference to a project under ./packages: " + ref);
+        }
     }
 }
 
-async function patchPackageJson(packagePath: string, packageJsonPath: string) {
+function patchPackageJson(packagePath: string, packageJsonPath: string, packages: PackagesType) {
     // Resolve all file:-based dependencies to explicit versions
-    const packageJson = await readPackageJson(packageJsonPath);
-    await updateDependencyVersions(packagePath, packageJson.dependencies);
-    await updateDependencyVersions(packagePath, packageJson.devDependencies);
+    const packageJson = readPackageJson(packageJsonPath);
+    updateDependencyVersions(packagePath, packageJson.dependencies, packages);
+    updateDependencyVersions(packagePath, packageJson.devDependencies, packages);
     fs.writeFileSync(packageJsonPath, stringifyPackage(packageJson), 'utf8');
 }
 
-async function readPackageJson(packageJsonPath: string) {
-    var readJsonPromise = new Promise<any>((resolve, reject) => {
-        readJson(packageJsonPath, console.error, true, function (er: any, data: any) {
-            if (er) {
-                console.error("There was an error reading package.json")
-                reject(er);
-                return;
-            }
-
-            resolve(data);
-        });
-    })
-
-    return await readJsonPromise;
+function readPackageJson(packageJsonPath: string) {
+    return JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 }
 
 /**
