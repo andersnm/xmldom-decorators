@@ -75,10 +75,22 @@ async function enumeratePackages(callback: (packagePath: string, packageJson: an
 
         const packageJson = readPackageJson(path.join(packagePath, "package.json"));
         nodes.push(packageJson.name);
-        for (let dependencyName of Object.keys(packageJson.dependencies)) {
-            const ref = packageJson.dependencies[dependencyName];
-            if (ref.startsWith("file:")) {
-                edges.push([dependencyName, packageJson.name])
+
+        if (packageJson.dependencies) {
+            for (let dependencyName of Object.keys(packageJson.dependencies)) {
+                const ref = packageJson.dependencies[dependencyName];
+                if (ref.startsWith("file:") && nodes.indexOf(dependencyName) !== -1) {
+                    edges.push([dependencyName, packageJson.name])
+                }
+            }
+        }
+
+        if (packageJson.devDependencies) {
+            for (let dependencyName of Object.keys(packageJson.devDependencies)) {
+                const ref = packageJson.devDependencies[dependencyName];
+                if (ref.startsWith("file:") && nodes.indexOf(dependencyName) !== -1) {
+                    edges.push([dependencyName, packageJson.name])
+                }
             }
         }
 

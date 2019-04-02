@@ -14,7 +14,6 @@ Check out the source code and install dependencies:
 git clone REPO-URL
 cd xmldom-decorators
 npm install
-npm run install  # shortcut for ./node_modules/.bin/blerf install
 ```
 
 Build, run tests and execute a REST API sample:
