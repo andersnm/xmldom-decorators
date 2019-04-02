@@ -345,18 +345,14 @@ function getClassName(path: string|string[]|undefined): string|undefined {
 
 class SchemaMapperVisitor extends SchemaVisitor {
     path: string[] = [];
-    elementClasses: Map<Element, SchemaClass>;
-    complexTypeClasses: Map<ComplexType, SchemaClass>;
-    simpleTypeClasses: Map<SimpleType, SchemaClass>;
+    mapper: SchemaMapper;
     schema: Schema | undefined;
     targetNamespace: string = "";
 
-    constructor(elementClasses: Map<Element, SchemaClass>, complexTypeClasses: Map<ComplexType, SchemaClass>, simpleTypeClasses: Map<SimpleType, SchemaClass>) {
+    constructor(mapper: SchemaMapper) {
         super();
 
-        this.elementClasses = elementClasses;
-        this.complexTypeClasses = complexTypeClasses;
-        this.simpleTypeClasses = simpleTypeClasses;
+        this.mapper = mapper;
     }
 
     visitSchema(schema: Schema) {
@@ -385,13 +381,19 @@ class SchemaMapperVisitor extends SchemaVisitor {
             this.path.push(complexType.name);
         }
 
-        this.complexTypeClasses.set(complexType, {
+        this.mapper.complexTypeClasses.set(complexType, {
             type: "complexType",
             javaScriptType: getClassName(complexType.name) || getClassName(this.path) || "",
             name: complexType.name || "",
             namespaceUri: this.targetNamespace,
             members: []
         } );
+
+        if (!this.schema) {
+            throw new Error("Internal error: no schema");
+        }
+
+        this.mapper.complexTypeSchemas.set(complexType, this.schema);
 
         super.visitComplexType(complexType, element);
 
@@ -401,7 +403,7 @@ class SchemaMapperVisitor extends SchemaVisitor {
     }
     
     visitSimpleType(simpleType: SimpleType) {
-        this.simpleTypeClasses.set(simpleType, {
+        this.mapper.simpleTypeClasses.set(simpleType, {
             type: "simpleType",
             javaScriptType: "",
             name: simpleType.name || "",
@@ -563,10 +565,6 @@ class SchemaClassVisitor extends SchemaVisitor {
                 throw new Error("Could not determine type for attribute");
             }
 
-            if (attribute.name  === "lang") {
-                console.log(JSON.stringify(attribute))
-            }
-
             top.members.push({
                 name: attribute.name || "",
                 javaScriptName: getMemberName(attribute.name) || "",
@@ -613,6 +611,27 @@ class SchemaClassVisitor extends SchemaVisitor {
 
         super.visitSimpleContent(simpleContent);
     }
+
+    visitExtensionBase(base: QName) {
+        const currentSchema = this.schema;
+
+        const type = this.mapper.collection.getComplexType(base);
+        if (!type) {
+            throw new Error("Cannot find complexType " + base.localName + "/" + base.namespaceUri);
+        }
+
+        // If type is in a different schema, set this.schema
+        // NOTE: Calling super's visitComplexType to add members to the current stack top, do not want the local logic
+        // TODO: may infinite loop/stackoverflow
+        this.schema = this.mapper.complexTypeSchemas.get(type);
+        if (!this.schema) {
+            throw new Error("schema");
+        }
+
+        super.visitComplexType(type);
+
+        this.schema = currentSchema;
+    }
 }
 
 export class SchemaMapper {
@@ -620,11 +639,20 @@ export class SchemaMapper {
     elementClasses: Map<Element, SchemaClass> = new Map();
     complexTypeClasses: Map<ComplexType, SchemaClass> = new Map();
     simpleTypeClasses: Map<SimpleType, SchemaClass> = new Map();
+    complexTypeSchemas: Map<ComplexType, Schema> = new Map();
 
     public load(fileName: string) {
         this.collection.load(fileName);
+        this.build();
+    }
 
-        var mapper = new SchemaMapperVisitor(this.elementClasses, this.complexTypeClasses, this.simpleTypeClasses);
+    public loadSchemas(schemas: Schema[]) {
+        this.collection.schemas.push(...schemas);
+        this.build();
+    }
+
+    build() {
+        var mapper = new SchemaMapperVisitor(this);
 
         for (let schema of this.collection.schemas) {
             mapper.visitSchema(schema);
