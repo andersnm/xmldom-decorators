@@ -76,6 +76,16 @@ async function enumeratePackages(callback: (packagePath: string, packageJson: an
         const packageJson = readPackageJson(path.join(packagePath, "package.json"));
         nodes.push(packageJson.name);
 
+        packages[packageJson.name] = {
+            packageJson: packageJson,
+            packagePath: packagePath
+        };
+    }
+
+    for (let packageName of nodes) {
+        const packageInfo = packages[packageName];
+        const packageJson = packageInfo.packageJson;
+
         if (packageJson.dependencies) {
             for (let dependencyName of Object.keys(packageJson.dependencies)) {
                 const ref = packageJson.dependencies[dependencyName];
@@ -93,11 +103,6 @@ async function enumeratePackages(callback: (packagePath: string, packageJson: an
                 }
             }
         }
-
-        packages[packageJson.name] = {
-            packageJson: packageJson,
-            packagePath: packagePath
-        };
     }
 
     const sorted = toposort(nodes, edges);
