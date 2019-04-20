@@ -2,14 +2,13 @@
   "name": "root",
   "private": true,
   "devDependencies": {
-    "blerf": "file:./packages/blerf"
+    "blerf": "https://github.com/andersnm/blerf/releases/download/v0.0.2/blerf-0.0.2.tgz"
   },
   "dependencies": {},
   "scripts": {
-    "preinstall": "cd packages/blerf && npm install && npm run build",
-    "build": "blerf run build",
-    "test": "blerf run test",
-    "install": "blerf install",
-    "pack": "blerf pack"
+    "build": "blerf build",
+    "test": "blerf build && blerf test",
+    "pack": "blerf build && blerf pack:publish",
+    "deploy": "blerf build && blerf pack:deploy"
   }
 }

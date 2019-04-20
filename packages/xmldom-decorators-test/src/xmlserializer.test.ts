@@ -1,6 +1,9 @@
-import { XMLRoot, XMLElement, XMLAttribute, XMLArray, XMLText } from '../src';
-import { XMLDecoratorSerializer, SerializerContext } from '../src';
-import { XMLDecoratorDeserializer, DeserializerContext } from '../src';
+import { XMLRoot, XMLElement, XMLAttribute, XMLArray, XMLText } from 'xmldom-decorators';
+import { XMLDecoratorSerializer, SerializerContext } from 'xmldom-decorators';
+import { XMLDecoratorDeserializer, DeserializerContext } from 'xmldom-decorators';
+import { Test, Expect, TestFixture, IgnoreTest } from "alsatian";
+
+const expect = Expect;
 
 export interface QName {
     localName: string;
@@ -208,54 +211,61 @@ class MultiMemberType {
 	thing?: DerivedMemberType1|DerivedMemberType2;
 }
 
-describe("Decorators", () => {
+@TestFixture("Decorators")
+export class SetOfTests {
 
-	test("Empty root", () => {
+	@Test("Empty root")
+	public emptyRoot() {
 		var o: EmptyRoot = {};
 		const result = serialize(o, EmptyRoot);
 		expect(result).toBe("<EmptyRoot/>");
 
 		const x: any = deserialize(result, EmptyRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Text in root", () => {
+	@Test("Text in root")
+	public textInRoot() {
 		const o: TextInRoot = { name: "Hello World", value: "Inner text" };
 		const result = serialize(o, TextInRoot);
 		expect(result).toBe('<TextInRoot name="Hello World">Inner text</TextInRoot>');
 
 		const x: any = deserialize(result, TextInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("String in root", () => {
+	@Test("String in root")
+	public stringInRoot(){
 		const o: StringInRoot = { name: "Hello World" };
 		const result = serialize(o, StringInRoot);
 		expect(result).toBe("<StringInRoot><name>Hello World</name></StringInRoot>");
 
 		const x: any = deserialize(result, StringInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("String with entity", () => {
+	@Test("String with entity")
+	public stringWithEntity() {
 		const o: StringInRoot = { name: "Hello & World" };
 		const result = serialize(o, StringInRoot);
 		expect(result).toBe("<StringInRoot><name>Hello &amp; World</name></StringInRoot>");
 
 		const x: any = deserialize(result, StringInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Date", () => {
+	@Test("Date")
+	public dateTest() {
 		const o: DateInRoot = { dateAttribute: new Date("2018-05-05Z"), dateElement: new Date("2018-05-05T13:14Z") };
 		const result = serialize(o, DateInRoot);
 		expect(result).toBe('<DateInRoot dateAttribute="2018-05-05T00:00:00.000Z"><dateElement>2018-05-05T13:14:00.000Z</dateElement></DateInRoot>');
 
 		const x: any = deserialize(result, DateInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Nested array in root", () => {
+	@Test("Nested array in root")
+	public nestedArrayInRoot() {
 		const o: NestedArrayInRoot = { names: [ "Hello", "World" ] };
 		const result = serialize(o, NestedArrayInRoot);
 		expect(result).toBe("<NestedArrayInRoot><names><String>Hello</String><String>World</String></names></NestedArrayInRoot>");
@@ -265,36 +275,40 @@ describe("Decorators", () => {
 
 		const x2: any = deserialize("<NestedArrayInRoot><names><String>Hello</String><String>World</String><NotAString>1</NotAString></names></NestedArrayInRoot>", NestedArrayInRoot);
 		expect(x2).toEqual(o);
-	});
+	}
 
-	test("Fallback type in root", () => {
+	@Test("Fallback type in root")
+	public fallbackTypeInRoot() {
 		const o: FallbackTypeInRoot  = { name: "test" };
 		const result = serialize(o, FallbackTypeInRoot);
 		expect(result).toBe("<FallbackTypeInRoot><Name>test</Name></FallbackTypeInRoot>");
 
 		const x: any = deserialize(result, FallbackTypeInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Optional type in root", () => {
+	@Test("Optional type in root")
+	public optionTypeInRoot() {
 		const o: OptionalTypeInRoot  = { value2: "test" };
 		const result = serialize(o, OptionalTypeInRoot);
 		expect(result).toBe("<OptionalTypeInRoot><value2>test</value2></OptionalTypeInRoot>");
 
 		const x: any = deserialize(result, OptionalTypeInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Empty nested array in root", () => {
+	@Test("Empty nested array in root")
+	public emptyNestedArrayInRoot() {
 		const o: NestedArrayInRoot = { names: [ ] };
 		const result = serialize(o, NestedArrayInRoot);
 		expect(result).toBe("<NestedArrayInRoot><names/></NestedArrayInRoot>");
 
 		const x: any = deserialize(result, NestedArrayInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Complex nested array in root", () => {
+	@Test("Complex nested array in root")
+	public complexNestedArrayInRoot() {
 		const o: ComplexNestedArrayInRoot = {
 			dates: [
 				{ dateAttribute: new Date("2018-02-02Z"), dateElement: new Date("2018-03-03Z") },
@@ -306,46 +320,50 @@ describe("Decorators", () => {
 
 		const x: any = deserialize(result, ComplexNestedArrayInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Flat array in root", () => {
+	@Test("Flat array in root")
+	public flatArrayInRoot() {
 		const o: FlatArrayInRoot = { names: [ "Hello", "World" ] };
 		const result = serialize(o, FlatArrayInRoot);
 		expect(result).toBe("<FlatArrayInRoot><names>Hello</names><names>World</names></FlatArrayInRoot>");
 
 		const x: any = deserialize(result, FlatArrayInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Empty flat array in root", () => {
+	@Test("Empty flat array in root")
+	public emptyFlatArrayInRoot() {
 		const o: FlatArrayInRoot = { names: [ ] };
 		const result = serialize(o, FlatArrayInRoot);
 		expect(result).toBe("<FlatArrayInRoot/>");
 
 		const x: any = deserialize(result, FlatArrayInRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Cyclic types", () => {
+	@Test("Cyclic types")
+	public cyclicTypes() {
 		const o: CyclicRoot = { element: { type: { elements: [ { type: { elements: [ ]} }]} } };
 		const result = serialize(o, CyclicRoot);
 		expect(result).toBe("<CyclicRoot><element><type><elements><type/></elements></type></element></CyclicRoot>");
 
 		const x: any = deserialize(result, CyclicRoot);
 		expect(x).toEqual(o);
-	});
+	}
 
-
-	test("Resolve prefix in attribute value", () => {
+	@Test("Resolve prefix in attribute value")
+	public resolveAttributePrefix() {
 		const o: ResolveAttributePrefix = { name: { localName: "test", namespaceUri: "uri-test"} };
 		const result = serialize(o, ResolveAttributePrefix);
 		expect(result).toBe('<p0:ResolveAttributePrefix name="p0:test" xmlns:p0="uri-test"/>');
 
 		const x: any = deserialize(result, ResolveAttributePrefix);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Multiple root types", () => {
+	@Test("Multiple root types")
+	public multiRootTypes() {
 		var o: MultiRootTypeMain = { name: 'test' };
 		const result = serialize(o, MultiRootTypeMain);
 		expect(result).toBe('<main name="test"/>');
@@ -354,20 +372,21 @@ describe("Decorators", () => {
 		expect(x).toEqual(o);
 
 		const y: any = deserialize('<warning />', [ MultiRootTypeMain, MultiRootTypeError, MultiRootTypeWarning ]);
-		expect(y).toBeInstanceOf(MultiRootTypeWarning);
+		expect(y.constructor).toBe(MultiRootTypeWarning);
 
 		const z: any = deserialize('<error />', [ MultiRootTypeMain, MultiRootTypeError, MultiRootTypeWarning ]);
-		expect(z).toBeInstanceOf(MultiRootTypeError);
-	});
+		expect(z.constructor).toBe(MultiRootTypeError);
+	}
 
-	test("Multiple root decorators", () => {
+	@Test("Multiple root decorators")
+	public multiRootDecorators() {
 		var o: MultiRootDecorator = { name: 'test' };
 		// <main>
 		const a = serialize(o, MultiRootDecorator, "main");
 		expect(a).toBe('<main name="test"/>');
 		
 		const x: any = deserialize(a, MultiRootDecorator);
-		expect(x).toBeInstanceOf(MultiRootDecorator);
+		expect(x.constructor).toBe(MultiRootDecorator);
 		expect(x).toEqual(o);
 
 		// <warning>
@@ -375,7 +394,7 @@ describe("Decorators", () => {
 		expect(b).toBe('<warning name="test"/>');
 
 		const y: any = deserialize(b, MultiRootDecorator);
-		expect(y).toBeInstanceOf(MultiRootDecorator);
+		expect(y.constructor).toBe(MultiRootDecorator);
 		expect(y).toEqual(o);
 
 		// <error>
@@ -383,11 +402,12 @@ describe("Decorators", () => {
 		expect(c).toBe('<error name="test"/>');
 
 		const z: any = deserialize(c, MultiRootDecorator);
-		expect(z).toBeInstanceOf(MultiRootDecorator);
+		expect(z.constructor).toBe(MultiRootDecorator);
 		expect(z).toEqual(o);
-	});
+	}
 
-	test("Array with multiple item types and isType", () => {
+	@Test("Array with multiple item types and isType")
+	public arrayMultiItemIsType() {
 		const o: MultiArrayItemType = {
 			elements: [
 				{
@@ -403,11 +423,12 @@ describe("Decorators", () => {
 		expect(a).toBe('<MultiArrayItemType><stuff stuffID="hello"/><thing thingID="world"/></MultiArrayItemType>');
 
 		const x: any = deserialize(a, MultiArrayItemType);
-		expect(x).toBeInstanceOf(MultiArrayItemType);
+		expect(x.constructor).toBe(MultiArrayItemType);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Array with multiple constructed item types and no isType", () => {
+	@Test("Array with multiple constructed item types and no isType")
+	public arrayMultiItemNoIsType() {
 		const o: MultiArrayConstructorItemType = {
 			elements: [
 				mix(new ArrayStuff(), {
@@ -423,11 +444,12 @@ describe("Decorators", () => {
 		expect(a).toBe('<MultiArrayConstructorItemType><stuff stuffID="hello"/><thing thingID="world"/></MultiArrayConstructorItemType>');
 
 		const x: any = deserialize(a, MultiArrayConstructorItemType);
-		expect(x).toBeInstanceOf(MultiArrayConstructorItemType);
+		expect(x.constructor).toBe(MultiArrayConstructorItemType);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Derived member type", () => {
+	@Test("Derived member type")
+	public derivedMemberType() {
 		const o: DerivedMemberType = {
 			thing: Object.assign<DerivedMemberType2, Partial<DerivedMemberType2>>(new DerivedMemberType2(), {
 				type: "type2",
@@ -439,11 +461,12 @@ describe("Decorators", () => {
 		expect(a).toBe('<DerivedMemberType><thing2 type="type2" fieldName="7"/></DerivedMemberType>');
 
 		const x: any = deserialize(a, DerivedMemberType);
-		expect(x).toBeInstanceOf(DerivedMemberType);
+		expect(x.constructor).toBe(DerivedMemberType);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Multi member type", () => {
+	@Test("Multi member type")
+	public multiMemberType() {
 		const o: MultiMemberType = {
 			thing: Object.assign<DerivedMemberType2, Partial<DerivedMemberType2>>(new DerivedMemberType2(), {
 				type: "type2",
@@ -455,27 +478,31 @@ describe("Decorators", () => {
 		expect(a).toBe('<MultiMemberType><thing2 type="type2" fieldName="7"/></MultiMemberType>');
 
 		const x: any = deserialize(a, MultiMemberType);
-		expect(x).toBeInstanceOf(MultiMemberType);
+		expect(x.constructor).toBe(MultiMemberType);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test.skip("Read first element if more than one in XML", () => {
+	@Test("Read first element if more than one in XML")
+	@IgnoreTest()
+	public readFirstElementIfMoreThanOne() {
 		// TODO: bug
 		const result = "<StringInRoot><name>Hello World</name><name>Second World</name></StringInRoot>";
 		const x: any = deserialize(result, StringInRoot);
 		expect(x).toEqual({ name: "Hello World" });
-	});
+	}
 
-	test("Don't invoke factory for missing attributes", () => {
+	@Test("Don't invoke factory for missing attributes")
+	public noFactoryMissingAttribute() {
 		const o: ResolveAttributePrefix = { };
 		const result = serialize(o, ResolveAttributePrefix);
 		expect(result).toBe('<p0:ResolveAttributePrefix xmlns:p0="uri-test"/>');
 
 		const x: any = deserialize(result, ResolveAttributePrefix);
 		expect(x).toEqual(o);
-	});
+	}
 
-	test("Throw if array without itemType", () => {
+	@Test("Throw if array without itemType")
+	public throwIfArrayNoItemType() {
 		expect(() => {
 
 			@XMLRoot()
@@ -486,36 +513,40 @@ describe("Decorators", () => {
 				things?: string[];
 			}
 				
-		}).toThrow(new Error("@XMLArray must declare item type on things"));
-	});
+		}).toThrow(); // new Error("@XMLArray must declare item type on things")
+	}
 
-	test("Throw if deserialize plain string", () => {
+	@Test("Throw if deserialize plain string")
+	public throwIfDeserializeString() {
 		expect(() => {
 			deserialize("not xml", EmptyRoot);
-		}).toThrow(new Error("Unexpected character data"));
-	});
+		}).toThrow(); // new Error("Unexpected character data")
+	}
 
-	test("Throw if deserialize bad XML", () => {
+	@Test("Throw if deserialize bad XML")
+	public throwIfDeserializeBadXml() {
 		expect(() => {
 			deserialize("<EmptyRoot not xml", EmptyRoot);
 		}).toThrow();
-	});
+	}
 
-	test("Throw if deserialize text before XML", () => {
+	@Test("Throw if deserialize text before XML")
+	public throwIfDeserializeTextBeforeXml() {
 		expect(() => {
 			deserialize("not xml <EmptyRoot/>", EmptyRoot);
-		}).toThrow(new Error("Unexpected character data"));
-	});
+		}).toThrow(); // new Error("Unexpected character data")
+	}
 
-	test("Do not throw if text after XML", () => {
+	@Test("Do not throw if text after XML")
+	public noThrowTextEnd() {
 		deserialize("<EmptyRoot/>abcdef", EmptyRoot);
-	});
+	}
 
-	test("Do not throw if XML after XML", () => {
+	@Test("Do not throw if XML after XML")
+	public noThrowXmlEnd() {
 		deserialize("<EmptyRoot/><EmptyRoot/><EmptyRoot/>", EmptyRoot);
-	});
-
-});
+	}
+}
 
 function serialize(data: any, type: Function, localName?: string, ns?: string): string {
 	const serializer = new XMLDecoratorSerializer();

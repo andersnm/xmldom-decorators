@@ -1,5 +1,5 @@
 {
-  "name": "xmldom-decorators",
+  "name": "xmldom-decorators-test",
   "version": "1.0.3",
   "description": "TypeScript decorators and (de-)serializer for xmldom",
   "author": "andersnm",
@@ -15,18 +15,20 @@
     "lib"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "alsatian lib/*.test.js"
   },
   "devDependencies": {
     "@types/node": "^10.12.7",
-    "@types/xmldom": "^0.1.29",
-    "typescript": "^3.3.1"
+    "typescript": "^3.3.1",
+    "alsatian": "2.4.0"
   },
   "dependencies": {
-    "reflect-metadata": "^0.1.12",
-    "xmldom": "^0.1.27"
+    "xmldom-decorators": "file:../xmldom-decorators",
+    "xmldom-decorators-cli": "file:../xmldom-decorators-cli"
   },
   "blerf": {
+    "coverageFrom": "../xmldom-decorators/lib",
     "steps": [
       {
         "outPath": "lib/**/*.js",

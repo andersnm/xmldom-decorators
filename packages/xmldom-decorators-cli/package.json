@@ -19,23 +19,26 @@
     "lib"
   ],
   "scripts": {
-    "build": "tsc",
-    "test": "jest"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "verbose": true,
-    "testEnvironment": "node",
-    "collectCoverage": true
+    "build": "tsc"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.9",
     "@types/node": "^10.12.7",
-    "jest": "^23.6.0",
-    "ts-jest": "^23.10.4",
     "typescript": "^3.3.1"
   },
   "dependencies": {
     "xmldom-decorators": "file:../xmldom-decorators"
+  },
+  "blerf": {
+    "steps": [
+      {
+        "outPath": "lib/**/*.js",
+        "srcPath": [
+          "src/**/*.ts",
+          "tsconfig.json",
+          "package.json"
+        ],
+        "script": "tsc"
+      }
+    ]
   }
 }

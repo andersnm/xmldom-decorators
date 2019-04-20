@@ -35,5 +35,24 @@
   "dependencies": {
     "node-fetch": "2.3.0",
     "xmldom-decorators": "file:../xmldom-decorators"
+  },
+  "blerf": {
+    "steps": [
+      {
+        "outPath": "src/met.no/reference.ts",
+        "srcPath": "xsd/met.no/locationforecast.xsd",
+        "script": "xmldom-decorators-cli xsd/met.no/locationforecast.xsd > src/met.no/reference.ts"
+      },
+      {
+        "outPath": "src/openml.org/reference.ts",
+        "srcPath": "xsd/openml.org/openml.data.upload.xsd",
+        "script": "xmldom-decorators-cli xsd/openml.org/openml.data.upload.xsd > src/openml.org/reference.ts"
+      },
+      {
+        "outPath": "lib/**/*.js",
+        "srcPath": "src/**/*.ts",
+        "script": "tsc"
+      }
+    ]
   }
 }

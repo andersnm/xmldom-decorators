@@ -1,33 +1,29 @@
-# xmldom-decorators - TypeScript decorators and (de-)serializer for xmldom
+# xmldom-decorators
+
+TypeScript decorators and (de-)serializer for xmldom.
 
 See [packages/xmldom-decorators](packages/xmldom-decorators)
 
-# xmldom-decorators-cli - XSD to TypeScript classes with decorators
+# xmldom-decorators-cli
+
+XSD to TypeScript classes with decorators.
 
 See [packages/xmldom-decorators-cli](packages/xmldom-decorators-cli)
 
 # Notes to self
 
-Check out the source code and install dependencies:
+First check out the source code and bootstrap the monorepo build environment:
 
 ```bash
-git clone REPO-URL
+git clone https://github.com/andersnm/xmldom-decorators.git
 cd xmldom-decorators
-npm install
+npm install   # installs blerf in the root project
 ```
 
 Build, run tests and execute a REST API sample:
 
 ```bash
-npm run build # shortcut for ./node_modules/.bin/blerf run build
-npm run test  # shortcut for ./node_modules/.bin/blerf run test
+npm run build # shortcut for ./node_modules/.bin/blerf build
+npm run test  # shortcut for ./node_modules/.bin/blerf test
 node ./packages/sample-clients location
 ```
-
-Create packages for npm publish:
-
-```bash
-npm run pack  # shortcut for ./node_modules/.bin/blerf pack
-```
-
-See [packages/blerf](packages/blerf)
