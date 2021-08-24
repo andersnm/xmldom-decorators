@@ -45,6 +45,24 @@ class TextInRoot {
 }
 
 @XMLRoot()
+class IntegerInRoot {
+	@XMLElement()
+	intElement: number = 0;
+
+	@XMLAttribute()
+	intAttribute?: number;
+}
+
+@XMLRoot()
+class DecimalInRoot {
+	@XMLElement()
+	decimalElement: number = 1.2;
+
+	@XMLAttribute()
+	decimalAttribute?: number;
+}
+
+@XMLRoot()
 class DateInRoot {
 	@XMLElement()
 	dateElement: Date = new Date(0);
@@ -278,6 +296,26 @@ export class SetOfTests {
 		expect(result).toBe("<StringInRoot><name>Hello &amp; World</name></StringInRoot>");
 
 		const x: any = deserialize(result, StringInRoot);
+		expect(x).toEqual(o);
+	}
+
+	@Test("Integer")
+	public integerTest() {
+		const o: IntegerInRoot = { intAttribute: 7, intElement: 11 };
+		const result = serialize(o, IntegerInRoot);
+		expect(result).toBe('<IntegerInRoot intAttribute="7"><intElement>11</intElement></IntegerInRoot>');
+
+		const x: any = deserialize(result, IntegerInRoot);
+		expect(x).toEqual(o);
+	}
+
+	@Test("Decimal")
+	public decimalTest() {
+		const o: DecimalInRoot = { decimalAttribute: 7.11 as number, decimalElement: 11.7 as number };
+		const result = serialize(o, DecimalInRoot);
+		expect(result).toBe('<DecimalInRoot decimalAttribute="7.11"><decimalElement>11.7</decimalElement></DecimalInRoot>');
+
+		const x: any = deserialize(result, DecimalInRoot);
 		expect(x).toEqual(o);
 	}
 
