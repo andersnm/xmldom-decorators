@@ -435,8 +435,9 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
         if (type === String) {
             return value;
         } else if (type === Number) {
-            var numberResult = parseInt(value);
-            if (isNaN(numberResult)) {
+            try {
+                var numberResult = Number(value).valueOf();
+            } catch (e) {
                 throw new Error("Cannot convert to number: " + value);
             }
             return numberResult;
