@@ -50,7 +50,7 @@ export function toposort<T>(nodes: T[], edges: [T, T][], cycleCallback: Function
     if (visited[i]) return;
     visited[i] = true
 
-    var outgoing = Array.from(outgoingEdges.get(node) || new Set());
+    var outgoing = Array.from<T>(outgoingEdges.get(node) || new Set());
 
     if (i = outgoing.length) {
       predecessors.add(node)

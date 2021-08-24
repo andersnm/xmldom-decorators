@@ -1,5 +1,16 @@
-import { XMLReader, Locator, DOMBuilder, ElementAttributes } from "xmldom/sax";
-import { RootSchema, ArraySchema, BaseSchema, ArrayItemOptions, isRootSchema, isElementSchema, isArraySchema, ElementSchema, TextSchema, AttributeSchema, isTextSchema } from "./decorators";
+import { DOMBuilder, ElementAttributes, Locator, XMLReader } from "xmldom/sax";
+import {
+  ArrayItemOptions,
+  ArraySchema,
+  AttributeSchema,
+  BaseSchema,
+  ElementSchema,
+  isArraySchema,
+  isElementSchema,
+  isTextSchema,
+  RootSchema,
+  TextSchema
+} from "./decorators";
 
 export function getArrayItemName(schema: ArraySchema, opts: ArrayItemOptions): string {
     if (!schema.nested && !opts.name) {
@@ -165,7 +176,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 
                 // Push a fake array container for this item, reusing the array value
                 const value = parent.value[childSchema.propertyKey] = parent.value[childSchema.propertyKey] || [];
-                
+
                 this.elementStack.push({
                     value: value,
                     elementSchema: childSchema,
@@ -175,7 +186,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                 });
 
                 this.pushValue(childSchema, itemType.itemType(), null, el);
-    
+
             } else if (isArraySchema(childSchema) && childSchema.nested) {
                 // nested array member on object
                 this.pushValue(childSchema, Array, childSchema.propertyKey, el);
@@ -435,8 +446,9 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
         if (type === String) {
             return value;
         } else if (type === Number) {
-            var numberResult = parseInt(value);
-            if (isNaN(numberResult)) {
+            try {
+                var numberResult = Number(value).valueOf();
+            } catch (e) {
                 throw new Error("Cannot convert to number: " + value);
             }
             return numberResult;
@@ -462,7 +474,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
 }
 
 export class XMLDecoratorDeserializer {
-    
+
     deserialize<T>(source: string, type: Function|Function[]): T {
 
         // array of types; and array of roots per type
