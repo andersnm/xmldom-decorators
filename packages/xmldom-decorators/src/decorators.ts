@@ -186,19 +186,22 @@ export function XMLRoot(opts: RootOptions = {}) {
     }
 }
 
-export function XMLElement<T>(opts: ElementOptions = {}) {
+export function XMLElement<T extends Object>(opts: ElementOptions = {}) {
     return function(target: T, propertyKey: string) {
         let type = Reflect.getMetadata("design:type", target, propertyKey);
         if (type === Array) {
             throw new Error("@XMLElement decorator does not support array types on " + propertyKey + " in " + target.constructor.name);
         }
 
-        let targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
-        if (targetChildren.length === 0) {
-            Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
+        let ownTargetChildren: BaseSchema[] = Reflect.getOwnMetadata("xml:type:children", target.constructor) || [];
+        if (ownTargetChildren.length === 0) {
+            // lookup inherited children from prototype chain
+            const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+            ownTargetChildren.push(...targetChildren);
+            Reflect.defineMetadata("xml:type:children", ownTargetChildren, target.constructor);
         }
 
-        targetChildren.push({
+        ownTargetChildren.push({
             propertyKey: propertyKey,
             xmlType: "element",
             types: !!opts.types ? getElementTypes(propertyKey, opts.types, type) : [{ itemType: () => type, name: propertyKey, namespaceUri: "" }],
@@ -213,12 +216,15 @@ export function XMLAttribute(opts: AttributeOptions = {}) {
             throw new Error("@XMLAttribute must specify type or factory on " + propertyKey + " in " + target.constructor.name);
         }
 
-        let targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
-        if (targetChildren.length === 0) {
-            Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
+        let ownTargetChildren: BaseSchema[] = Reflect.getOwnMetadata("xml:type:children", target.constructor) || [];
+        if (ownTargetChildren.length === 0) {
+            // lookup inherited children from prototype chain
+            const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+            ownTargetChildren.push(...targetChildren);
+            Reflect.defineMetadata("xml:type:children", ownTargetChildren, target.constructor);
         }
         
-        targetChildren.push({
+        ownTargetChildren.push({
             propertyKey: propertyKey,
             factory: opts.factory,
             name: opts.name || propertyKey || "",
@@ -236,9 +242,12 @@ export function XMLArray(opts: ArrayOptions = {}) {
             throw new Error("@XMLArray requires an array type on " + propertyKey + " in " + target.constructor.name);
         }
 
-        const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
-        if (targetChildren.length === 0) {
-            Reflect.defineMetadata("xml:type:children", targetChildren, target.constructor);
+        const ownTargetChildren: BaseSchema[] = Reflect.getOwnMetadata("xml:type:children", target.constructor) || [];
+        if (ownTargetChildren.length === 0) {
+            // lookup inherited children from prototype chain
+            const targetChildren: BaseSchema[] = Reflect.getMetadata("xml:type:children", target.constructor) || [];
+            ownTargetChildren.push(...targetChildren)
+            Reflect.defineMetadata("xml:type:children", ownTargetChildren, target.constructor);
         }
         
         const name = opts.name || propertyKey;
@@ -253,7 +262,7 @@ export function XMLArray(opts: ArrayOptions = {}) {
             itemTypes: !!opts.itemTypes ? getArrayItemTypes(propertyKey, opts.itemTypes, type) : [],
         };
 
-        targetChildren.push(arraySchema);
+        ownTargetChildren.push(arraySchema);
     }
 }
 

@@ -211,6 +211,33 @@ class MultiMemberType {
 	thing?: DerivedMemberType1|DerivedMemberType2;
 }
 
+
+abstract class DerivedDecoratedBase {
+	@XMLAttribute({ type: String})
+	parentAttr = "parent"
+
+	@XMLElement({ types: [{ name: "parentEl", itemType: () => String }]})
+	parentEl = "parent"
+}
+
+@XMLRoot()
+class DerivedDecoratedType1 extends DerivedDecoratedBase {
+	@XMLAttribute({ type: String})
+	type = "type1"
+
+	@XMLElement({ types: [{ name: "typeEl", itemType: () => String }]})
+	typeEl = "type1"
+}
+
+@XMLRoot()
+class DerivedDecoratedType2 extends DerivedDecoratedBase {
+	@XMLAttribute({ type: String})
+	type = "type2"
+
+	@XMLElement({ types: [{ name: "typeEl", itemType: () => String }]})
+	typeEl = "type2"
+}
+
 @TestFixture("Decorators")
 export class SetOfTests {
 
@@ -480,6 +507,22 @@ export class SetOfTests {
 		const x: any = deserialize(a, MultiMemberType);
 		expect(x.constructor).toBe(MultiMemberType);
 		expect(x).toEqual(o);
+	}
+
+	@Test("Multi derived member instances for DerivedDecoratedType1")
+	public multiDerivedMemberInstances1() {
+		const o = new DerivedDecoratedType1();
+		const a = serialize(o, DerivedDecoratedType1);
+
+		expect(a).toBe('<DerivedDecoratedType1 parentAttr="parent" type="type1"><parentEl>parent</parentEl><typeEl>type1</typeEl></DerivedDecoratedType1>');
+	}
+
+	@Test("Multi derived member instances for DerivedDecoratedType2")
+	public multiDerivedMemberInstances2() {
+		const o = new DerivedDecoratedType2();
+		const a = serialize(o, DerivedDecoratedType2);
+
+		expect(a).toBe('<DerivedDecoratedType2 parentAttr="parent" type="type2"><parentEl>parent</parentEl><typeEl>type2</typeEl></DerivedDecoratedType2>');
 	}
 
 	@Test("Read first element if more than one in XML")
