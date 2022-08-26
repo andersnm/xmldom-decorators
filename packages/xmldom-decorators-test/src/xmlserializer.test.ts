@@ -564,7 +564,6 @@ export class SetOfTests {
 	}
 
 	@Test("Read first element if more than one in XML")
-	@IgnoreTest()
 	public readFirstElementIfMoreThanOne() {
 		// TODO: bug
 		const result = "<StringInRoot><name>Hello World</name><name>Second World</name></StringInRoot>";

@@ -41,6 +41,7 @@ interface ElementContext {
     value: any;
     propertyKey: string | null; // resolved property name, since schema doesnt have it always
     type: Function | null; // actual resolved element type
+    keys: {[key: string]: true}; // encountered property keys if element/root type
 }
 
 export interface DeserializerContext {
@@ -172,6 +173,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                     contextType: "array",
                     type: Array,
                     propertyKey: childSchema.propertyKey,
+                    keys: {},
                 });
 
                 this.pushValue(childSchema, itemType.itemType(), null, el);
@@ -239,7 +241,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             return;
         }
 
-        var top = this.elementStack[this.elementStack.length - 1];
+        const top = this.elementStack[this.elementStack.length - 1];
         if (top.elementSchema === null) {
             return;
         }
@@ -249,7 +251,12 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                 throw new Error("Expected propertyKey to be set");
             }
 
+            if (top.keys[parent.propertyKey]) {
+                return; // already set
+            }
+
             top.value[parent.propertyKey] = parent.value;
+            top.keys[parent.propertyKey] = true;
         } else if (top.contextType === "array") {
             const arraySchema = top.elementSchema as ArraySchema;
 
@@ -348,6 +355,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             contextType: "root",
             type: rootSchema.type,
             propertyKey: null,
+            keys: {},
         });
 
         this.setAttributes(value, rootSchema.type, el);
@@ -385,6 +393,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             contextType: "ignore",
             type: null,
             propertyKey: null,
+            keys: {},
         });
     }
 
@@ -397,6 +406,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                 contextType: "element",
                 type: type,
                 propertyKey: propertyKey,
+                keys: {},
             });
         } else if (type === Array) {
             const arraySchema = elementSchema as ArraySchema;
@@ -411,6 +421,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                 contextType: "array",
                 type: type,
                 propertyKey: propertyKey,
+                keys: {},
             });
         } else if (typeof type === "function") {
             // Complex object
@@ -423,6 +434,7 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
                 contextType: "element",
                 type: type,
                 propertyKey: propertyKey,
+                keys: {},
             });
         } else if (Array.isArray(type)) {
             throw new Error("Internal error: Shouldnt be array here");
