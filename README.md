@@ -1,5 +1,6 @@
 # xmldom-decorators
 [![CodeQL](https://github.com/neumaennl/xmldom-decorators/actions/workflows/codeql.yml/badge.svg)](https://github.com/neumaennl/xmldom-decorators/actions/workflows/codeql.yml)
+[![Tests](https://github.com/neumaennl/xmldom-decorators/workflows/Tests/badge.svg)](https://github.com/neumaennl/xmldom-decorators/actions/workflows/test.yml)
 
 TypeScript decorators and (de-)serializer for xmldom.
 
