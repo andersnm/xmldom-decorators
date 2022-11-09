@@ -1,5 +1,5 @@
 import { BaseSchema, ElementSchema, ArraySchema, RootSchema, ArrayItemOptions, isAttributeSchema, isTextSchema, isElementSchema, isArraySchema } from "./decorators";
-import { DOMImplementation, XMLSerializer } from "xmldom";
+import { DOMImplementation, XMLSerializer } from "@xmldom/xmldom";
 import { getArrayItemName } from "./deserializer";
 
 export interface SerializerContext {

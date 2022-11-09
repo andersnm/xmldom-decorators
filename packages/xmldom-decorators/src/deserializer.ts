@@ -1,4 +1,4 @@
-import { XMLReader, Locator, DOMBuilder, ElementAttributes } from "xmldom/sax";
+import { XMLReader, Locator, DOMBuilder, ElementAttributes } from "@xmldom/xmldom/lib/sax";
 import { RootSchema, ArraySchema, BaseSchema, ArrayItemOptions, isRootSchema, isElementSchema, isArraySchema, ElementSchema, TextSchema, AttributeSchema, isTextSchema } from "./decorators";
 
 export function getArrayItemName(schema: ArraySchema, opts: ArrayItemOptions): string {
