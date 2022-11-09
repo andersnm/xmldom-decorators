@@ -26,7 +26,7 @@
     "typescript": "^3.3.1"
   },
   "dependencies": {
-    "xmldom-decorators": "file:../xmldom-decorators"
+    "xmldom-decorators": "file:../../artifacts/build/xmldom-decorators.tgz"
   },
   "blerf": {
     "steps": [
