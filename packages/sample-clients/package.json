@@ -33,7 +33,7 @@
     "xmldom-decorators-cli": "file:../xmldom-decorators-cli"
   },
   "dependencies": {
-    "node-fetch": "2.3.0",
+    "node-fetch": "3.2.10",
     "xmldom-decorators": "file:../xmldom-decorators"
   },
   "blerf": {
