@@ -1,6 +1,6 @@
 // Type definitions for xmldom/sax internals (XMLReader). These APIs are not officially documented.
 
-declare module 'xmldom/sax' {
+declare module '@xmldom/xmldom/lib/sax' {
     var XMLReader: XMLReaderStatic;
 
     interface XMLReaderStatic {
@@ -16,7 +16,7 @@ declare module 'xmldom/sax' {
     interface ElementAttributes extends Array<ElementAttribute> {
         length: number;
         setTagName(tagName: string): void;
-        add(qName: string, value: string, offset: number): void;
+        addValue(qName: string, value: string, offset: number): void;
         getLocalName(i: number): string;
         getLocator(i: number): string;
         getQName(i: number): string;

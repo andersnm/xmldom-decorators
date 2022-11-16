@@ -19,12 +19,11 @@
   },
   "devDependencies": {
     "@types/node": "^10.12.7",
-    "@types/xmldom": "^0.1.29",
     "typescript": "^3.3.1"
   },
   "dependencies": {
     "reflect-metadata": "^0.1.12",
-    "xmldom": "^0.1.27"
+		"@xmldom/xmldom": ">=0.8.0"
   },
   "blerf": {
     "steps": [
