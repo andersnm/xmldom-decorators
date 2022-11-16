@@ -26,3 +26,13 @@ jobs:
       run: npm install
     - name: Test
       run: npm run test
+    - name: archive xmldom-decorators
+      uses: actions/upload-artifact@v3
+      with:
+        name: xmldom-decorators.tgz
+        path: artifacts/build/xmldom-decorators.tgz
+    - name: archive xmldom-decorators-cli
+      uses: actions/upload-artifact@v3
+      with:
+        name: xmldom-decorators-cli.tgz
+        path: artifacts/build/xmldom-decorators-cli.tgz
