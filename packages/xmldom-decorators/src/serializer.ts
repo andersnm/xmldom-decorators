@@ -107,7 +107,15 @@ export class XMLDecoratorSerializer implements SerializerContext {
             } else if (isTextSchema(child)) {
                 const value = this.convertValue(data[child.propertyKey], child.type);
                 if (value !== undefined) {
-                    element.appendChild(this.document.createTextNode(value));
+                    let appendCData = false
+                    if (child.cdata) {
+                        appendCData = child.cdata(value)
+                    }
+                    if (appendCData) {
+                        element.appendChild(this.document.createCDATASection(value))
+                    } else {
+                        element.appendChild(this.document.createTextNode(value));
+                    }
                 }
             }
         }

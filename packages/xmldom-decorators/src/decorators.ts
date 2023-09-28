@@ -7,6 +7,9 @@ type FactoryWriter = (value: any, ctx: SerializerContext) => string;
 type FactoryTuple = [FactoryReader, FactoryWriter];
 type TypeGetter = () => Function;
 type IsTypeGetter = (o: any) => boolean;
+type CDataGetter = (t: string) => boolean
+
+const ALWAYS_FALSE_CDATA: CDataGetter = () => false
 
 export interface RootOptions {
     /**
@@ -92,6 +95,7 @@ export interface AttributeOptions {
 }
 
 export interface TextOptions {
+    cdata?: CDataGetter
 }
 
 export interface BaseSchema {
@@ -124,6 +128,7 @@ export interface TextSchema extends BaseSchema {
     xmlType: "text";
     propertyKey: string;
     type: Function;
+    cdata: CDataGetter
 }
 
 export interface AttributeSchema extends BaseSchema {
@@ -299,6 +304,7 @@ export function XMLText(opts: TextOptions = {}) {
             propertyKey: propertyKey,
             type: type,
             xmlType: "text",
+            cdata: opts.cdata || ALWAYS_FALSE_CDATA
         };
 
         targetChildren.push(textSchema);
