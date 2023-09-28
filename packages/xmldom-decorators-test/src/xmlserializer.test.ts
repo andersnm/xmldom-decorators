@@ -45,6 +45,15 @@ class TextInRoot {
 }
 
 @XMLRoot()
+class CDataTextInRoot {
+	@XMLAttribute()
+	name: string = "";
+
+	@XMLText({cdata: () => true})
+	value: string = "";
+}
+
+@XMLRoot()
 class IntegerInRoot {
 	@XMLElement()
 	intElement: number = 0;
@@ -276,6 +285,17 @@ export class SetOfTests {
 		expect(result).toBe('<TextInRoot name="Hello World">Inner text</TextInRoot>');
 
 		const x: any = deserialize(result, TextInRoot);
+		expect(x).toEqual(o);
+	}
+
+	@Test("CDATA text in root")
+	public cdataTextInRoot() {
+		const o: CDataTextInRoot = { name: "Hello CDATA", value: "CData text" };
+		const result = serialize(o, CDataTextInRoot);
+		expect(result).toBe('<CDataTextInRoot name="Hello CDATA"><![CDATA[CData text]]></CDataTextInRoot>');
+
+		const x: any = deserialize(result, CDataTextInRoot);
+		console.log(x)
 		expect(x).toEqual(o);
 	}
 
