@@ -100,17 +100,20 @@ class DeserializerBuilder implements DOMBuilder, DeserializerContext {
             return;
         }
 
-        // console.log("chars", xt, start, length)
+        // Normally 'start' will be 0 and 'length' will be the length of the
+        // character data. However, for CDATA, the xmldom parser passes in the
+        // entire input XML string and the 'start' index within that string.
+        let chars = xt.substring(start, start + length)
 
         if (parent.contextType === "root" || parent.contextType === "element") {
             if (parent.type === Number || parent.type === Boolean || parent.type === String || parent.type === Date) {
-                parent.value = this.convertValue(xt, parent.type);
+                parent.value = this.convertValue(chars, parent.type);
             } else if (typeof parent.type === "function") {
                 // Text inside object, check for a property with XMLText decorator:
                 const children: BaseSchema[] = Reflect.getMetadata("xml:type:children", parent.type) || [];
                 const childSchema = children.find(c => isTextSchema(c)) as TextSchema;
                 if (childSchema) {
-                    parent.value[childSchema.propertyKey] = this.convertValue(xt, childSchema.type);
+                    parent.value[childSchema.propertyKey] = this.convertValue(chars, childSchema.type);
                 }
             }
         }
